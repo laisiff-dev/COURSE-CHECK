@@ -75,43 +75,62 @@
 
       <!-- 附件1~4 Slots -->
       <div class="section-title">
-        <span>📁 第一關 檢附文件帶入區塊 (附件1 ~ 附件4)</span>
+        <span>📁 第一關 檢附文件帶入與檢視區塊 (附件1 ~ 附件4)</span>
       </div>
+
+      <!-- 隱藏式檔案上傳 Input -->
+      <input type="file" id="slot1-file-input" accept=".docx,.pdf,.doc" style="display: none;" />
+      <input type="file" id="slot2-file-input" accept=".xlsx,.csv,.docx,.pdf" style="display: none;" />
+      <input type="file" id="slot3-file-input" accept=".zip,.docx,.pdf" style="display: none;" />
+      <input type="file" id="slot4-file-input" accept=".xlsx,.csv,.docx,.pdf" style="display: none;" />
+
       <div class="slots-grid">
         <div class="slot-card" id="slot1">
           <div>
             <div class="slot-header"><span class="slot-badge">附件1</span><span class="slot-title">計畫申請書</span></div>
             <div class="slot-desc">申請單位、經費需求與委員人數安排。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot1-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件1 已帶入！')">帶入/檢視</button></div>
+          <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot1">📂 帶入檔案</button>
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot1">🔍 檢視/編輯</button>
+          </div>
         </div>
 
         <div class="slot-card" id="slot2">
           <div>
             <div class="slot-header"><span class="slot-badge">附件2</span><span class="slot-title">科目表</span></div>
             <div class="slot-desc">修修科目名稱、英文名稱、學分與修課年級。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot2-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件2 已帶入！')">帶入/檢視</button></div>
+          <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot2">📂 帶入檔案</button>
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot2">🔍 檢視/編輯</button>
+          </div>
         </div>
 
         <div class="slot-card" id="slot3">
           <div>
             <div class="slot-header"><span class="slot-badge">附件3</span><span class="slot-title">課程大綱資料表</span></div>
             <div class="slot-desc">教學單元條列(≥6項)及英文名稱規範。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot3-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件3 已帶入！')">帶入/檢視</button></div>
+          <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot3">📂 帶入檔案</button>
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot3">🔍 檢視/編輯</button>
+          </div>
         </div>
 
         <div class="slot-card" id="slot4">
           <div>
             <div class="slot-header"><span class="slot-badge">附件4</span><span class="slot-title">核心能力關聯表</span></div>
             <div class="slot-desc">核心能力指標與必選修科目對照矩陣。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot4-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件4 已帶入！')">帶入/檢視</button></div>
+          <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot4">📂 帶入檔案</button>
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot4">🔍 檢視/編輯</button>
+          </div>
         </div>
       </div>
 
