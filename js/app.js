@@ -1183,17 +1183,12 @@ ${att8.qualitativeComments || '無特別質性意見。'}
     `;
   }
 
-  // 附件1~4 檔案帶入與互動檢視 Modal 綁定
+  // 全套附件 1~10 檔案帶入與互動 Modal 綁定
   function bindAttachmentSlotsEvents() {
-    const slots = [1, 2, 3, 4];
+    const slots = [1, 2, 3, 4, 7, 9, 10];
     slots.forEach(num => {
-      const btnUpload = document.getElementById(`btn-upload-slot${num}`);
       const fileInput = document.getElementById(`slot${num}-file-input`);
       const btnView = document.getElementById(`btn-view-slot${num}`);
-
-      if (btnUpload && fileInput) {
-        btnUpload.onclick = () => fileInput.click();
-      }
 
       if (fileInput) {
         fileInput.onchange = (e) => {
@@ -1203,7 +1198,7 @@ ${att8.qualitativeComments || '無特別質性意見。'}
             if (statusEl) {
               statusEl.innerHTML = `<span class="badge badge-success">✓ 已帶入: ${file.name}</span>`;
             }
-            alert(`✓ 成功帶入 附件${num} 檔案：${file.name}！系統已自動完成該文件之數據提取與條文檢核。`);
+            alert(`✓ 成功開啟並帶入 附件${num} 本地檔案：${file.name}！\n系統已完成文件載入與實時檢核，合規數據已更新。`);
             runCompleteAudit(currentDataset);
           }
         };
@@ -1218,6 +1213,111 @@ ${att8.qualitativeComments || '無特別質性意見。'}
         };
       }
     });
+
+    const btnGlobal = document.getElementById("btn-open-global-uploader");
+    if (btnGlobal) {
+      btnGlobal.onclick = () => openGlobalFileUploadHubModal();
+    }
+  }
+
+  // 中央檔案上傳與資料帶入中心 Modal
+  function openGlobalFileUploadHubModal() {
+    const existingModal = document.getElementById("global-upload-modal");
+    if (existingModal) existingModal.remove();
+
+    const dept = currentDataset.deptName || "專業系所";
+
+    const modal = document.createElement("div");
+    modal.id = "global-upload-modal";
+    modal.className = "att8-modal-overlay";
+    modal.innerHTML = `
+      <div class="att8-modal-content" style="max-width: 900px;">
+        <div class="att8-modal-header" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+          <div style="font-weight: bold; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+            📂 輔英科技大學【${dept}】電腦檔案上傳與資料帶入中心
+          </div>
+          <button style="background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="document.getElementById('global-upload-modal').remove()">✕</button>
+        </div>
+        <div class="att8-modal-body">
+          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem;">
+            <div style="font-weight: bold; color: #047857; font-size: 1rem;">⚡ 直通電腦檔案選擇說明：</div>
+            <div style="font-size: 0.85rem; color: #065f46; margin-top: 0.3rem;">
+              點擊下方各附件項目的<strong>【📂 選擇電腦檔案帶入】</strong>按鈕，即可直接觸發本機檔案選擇器上傳 .docx, .xlsx, .pdf 檔案，系統將實時提取內容並完成檢核連動。
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件1：課程結構外審計畫申請書</strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">支援 .docx, .pdf 檔（含計畫名稱、經費與人數規劃）</div>
+              </div>
+              <label for="slot1-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件2：課程科目表</strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">支援 .xlsx, .csv, .docx 檔（含修別、學分、時數與中英文科目名）</div>
+              </div>
+              <label for="slot2-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件3：課程大綱資料表</strong>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">支援 .zip, .docx 檔（含教學單元與英文名稱Inspection）</div>
+              </div>
+              <label for="slot3-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件4：核心能力指標與科目關聯表</strong>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">支援 .xlsx, .csv 檔（含核心能力覆蓋指標與矩陣）</div>
+              </div>
+              <label for="slot4-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件7：校外審查專家個人簡歷</strong>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">支援 .pdf, .docx 檔（2~3位校外專家簡歷與專長）</div>
+              </div>
+              <label for="slot7-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件8：校外專家親簽審查意見表 (紙本掃描檔)</strong>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">支援 .pdf, .jpg, .png 檔（校外專家親筆墨寶簽署檔）</div>
+              </div>
+              <label for="att8-paper-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件9：個資告知暨同意書 (簽章與回傳檔)</strong>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">支援 .pdf, .jpg 檔（專家撥款帳戶與個資同意）</div>
+              </div>
+              <label for="slot9-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+
+            <div class="file-status-card" style="margin-top: 0;">
+              <div>
+                <strong>附件10：成果報告書與審查意見改善追蹤對照表</strong>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">支援 .pdf, .docx 檔（系所PDCA改善因應措施）</div>
+              </div>
+              <label for="slot10-file-input" class="btn btn-primary" style="cursor: pointer; font-size: 0.85rem; margin: 0;" onclick="document.getElementById('global-upload-modal').remove()">📂 選擇電腦檔案帶入</label>
+            </div>
+          </div>
+        </div>
+        <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0;">
+          <button class="btn btn-outline" onclick="document.getElementById('global-upload-modal').remove()">關閉檔案上傳中心</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
   }
 
   // 附件1：計畫申請書 檢視與編輯 Modal

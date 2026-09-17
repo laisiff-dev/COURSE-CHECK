@@ -67,6 +67,7 @@
             <option value="2elderly">護理學院 高齡照護系 (警示對比範例)</option>
           </select>
           <button class="btn btn-primary" id="btn-load-preset">載入該系所資料</button>
+          <button class="btn btn-success" id="btn-open-global-uploader" style="font-weight: bold;">📂 電腦檔案上傳中心 (附件1~10)</button>
         </div>
       </div>
 
@@ -78,7 +79,7 @@
         <span>📁 第一關 檢附文件帶入與檢視區塊 (附件1 ~ 附件4)</span>
       </div>
 
-      <!-- 隱藏式檔案上傳 Input -->
+      <!-- 原生直通檔案上傳 Input -->
       <input type="file" id="slot1-file-input" accept=".docx,.pdf,.doc" style="display: none;" />
       <input type="file" id="slot2-file-input" accept=".xlsx,.csv,.docx,.pdf" style="display: none;" />
       <input type="file" id="slot3-file-input" accept=".zip,.docx,.pdf" style="display: none;" />
@@ -92,7 +93,7 @@
             <div class="slot-status" id="slot1-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
           <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
-            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot1">📂 帶入檔案</button>
+            <label for="slot1-file-input" class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; cursor: pointer; text-align: center; margin: 0;">📂 帶入檔案</label>
             <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot1">🔍 檢視/編輯</button>
           </div>
         </div>
@@ -104,7 +105,7 @@
             <div class="slot-status" id="slot2-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
           <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
-            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot2">📂 帶入檔案</button>
+            <label for="slot2-file-input" class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; cursor: pointer; text-align: center; margin: 0;">📂 帶入檔案</label>
             <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot2">🔍 檢視/編輯</button>
           </div>
         </div>
@@ -116,7 +117,7 @@
             <div class="slot-status" id="slot3-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
           <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
-            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot3">📂 帶入檔案</button>
+            <label for="slot3-file-input" class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; cursor: pointer; text-align: center; margin: 0;">📂 帶入檔案</label>
             <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot3">🔍 檢視/編輯</button>
           </div>
         </div>
@@ -128,7 +129,7 @@
             <div class="slot-status" id="slot4-status"><span class="badge badge-success">✓ 已載入預設檔</span></div>
           </div>
           <div class="slot-actions" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
-            <button class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-upload-slot4">📂 帶入檔案</button>
+            <label for="slot4-file-input" class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; cursor: pointer; text-align: center; margin: 0;">📂 帶入檔案</label>
             <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.4rem;" id="btn-view-slot4">🔍 檢視/編輯</button>
           </div>
         </div>
@@ -210,23 +211,31 @@
       <div class="section-title">
         <span>📁 第二關 檢附文件與委員回傳區 (附件7 & 附件9)</span>
       </div>
+
+      <input type="file" id="slot7-file-input" accept=".pdf,.docx,.doc" style="display: none;" />
+      <input type="file" id="slot9-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" />
+
       <div class="slots-grid">
         <div class="slot-card" id="slot7">
           <div>
             <div class="slot-header"><span class="slot-badge">附件7</span><span class="slot-title">校外專家簡歷</span></div>
             <div class="slot-desc">2~3 位校外審查委員個人簡歷與專長。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot7-status"><span class="badge badge-success">✓ 已載入簡歷檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件7 已帶入！')">帶入/檢視</button></div>
+          <div class="slot-actions">
+            <label for="slot7-file-input" class="btn btn-outline" style="width: 100%; font-size: 0.8rem; cursor: pointer; text-align: center; display: block; margin: 0.5rem 0 0 0;">📂 選擇電腦檔案帶入/上傳</label>
+          </div>
         </div>
 
         <div class="slot-card" id="slot9">
           <div>
             <div class="slot-header"><span class="slot-badge" style="background: var(--warning-color);">附件9</span><span class="slot-title">個資同意書 (回傳區)</span></div>
             <div class="slot-desc">校外專家撥款帳戶與簽章檔回傳。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot9-status"><span class="badge badge-success">✓ 已載入簽章檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件9 已帶入！')">委員回傳上傳</button></div>
+          <div class="slot-actions">
+            <label for="slot9-file-input" class="btn btn-outline" style="width: 100%; font-size: 0.8rem; cursor: pointer; text-align: center; display: block; margin: 0.5rem 0 0 0;">📂 選擇電腦檔案帶入/上傳</label>
+          </div>
         </div>
       </div>
 
@@ -246,14 +255,19 @@
       <div class="section-title">
         <span>📁 第三階段 專業系所成果與改善對照上傳 (附件10)</span>
       </div>
+
+      <input type="file" id="slot10-file-input" accept=".pdf,.docx,.doc" style="display: none;" />
+
       <div class="slots-grid">
         <div class="slot-card" id="slot10" style="max-width: 400px;">
           <div>
             <div class="slot-header"><span class="slot-badge" style="background: var(--danger-color);">附件10</span><span class="slot-title">成果報告書 (系所)</span></div>
             <div class="slot-desc">PDCA成果填報與委員意見改善對照上傳。</div>
-            <div class="slot-status"><span class="badge badge-success">✓ 已載入</span></div>
+            <div class="slot-status" id="slot10-status"><span class="badge badge-success">✓ 已載入成果檔</span></div>
           </div>
-          <div class="slot-actions"><button class="btn btn-outline" style="width: 100%; font-size: 0.8rem;" onclick="alert('附件10 成果報告書已帶入！')">系所改善上傳</button></div>
+          <div class="slot-actions">
+            <label for="slot10-file-input" class="btn btn-outline" style="width: 100%; font-size: 0.8rem; cursor: pointer; text-align: center; display: block; margin: 0.5rem 0 0 0;">📂 選擇電腦檔案帶入/上傳</label>
+          </div>
         </div>
       </div>
 
