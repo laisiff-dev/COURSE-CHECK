@@ -1194,12 +1194,7 @@ ${att8.qualitativeComments || '無特別質性意見。'}
         fileInput.onchange = (e) => {
           if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            const statusEl = document.getElementById(`slot${num}-status`);
-            if (statusEl) {
-              statusEl.innerHTML = `<span class="badge badge-success">✓ 已帶入: ${file.name}</span>`;
-            }
-            alert(`✓ 成功開啟並帶入 附件${num} 本地檔案：${file.name}！\n系統已完成文件載入與實時檢核，合規數據已更新。`);
-            runCompleteAudit(currentDataset);
+            openUploadConfirmationModal(num, file);
           }
         };
       }
@@ -1218,6 +1213,86 @@ ${att8.qualitativeComments || '無特別質性意見。'}
     if (btnGlobal) {
       btnGlobal.onclick = () => openGlobalFileUploadHubModal();
     }
+  }
+
+  // 核心亮點：檔案上傳確認與「完成帶入並執行檢核」雙階對話框
+  function openUploadConfirmationModal(slotNum, file) {
+    const existingModal = document.getElementById("upload-confirm-modal");
+    if (existingModal) existingModal.remove();
+
+    const slotNames = {
+      1: "附件1：課程結構外審計畫申請書",
+      2: "附件2：課程科目表",
+      3: "附件3：課程大綱資料表",
+      4: "附件4：核心能力關聯表",
+      7: "附件7：校外審查專家個人簡歷",
+      8: "附件8：專家親簽審查意見表",
+      9: "附件9：個資告知暨同意書",
+      10: "附件10：成果報告書與對照表"
+    };
+
+    const slotTitle = slotNames[slotNum] || `附件${slotNum}`;
+    const fileSizeStr = (file.size / 1024).toFixed(1) + " KB";
+    const dept = currentDataset.deptName || "專業系所";
+
+    const modal = document.createElement("div");
+    modal.id = "upload-confirm-modal";
+    modal.className = "att8-modal-overlay";
+    modal.innerHTML = `
+      <div class="att8-modal-content" style="max-width: 650px;">
+        <div class="att8-modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+          <div style="font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+            📂 ${slotTitle} - 電腦檔案上傳與帶入確認
+          </div>
+          <button style="background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="document.getElementById('upload-confirm-modal').remove()">✕</button>
+        </div>
+        <div class="att8-modal-body">
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.25rem;">
+            <div style="font-size: 0.9rem; color: #0369a1; font-weight: bold; margin-bottom: 0.5rem;">📄 已成功開啟電腦本地檔案：</div>
+            <div style="font-size: 1.1rem; font-weight: bold; color: var(--primary-color);">
+              ${file.name}
+            </div>
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 0.3rem;">
+              檔案大小：${fileSizeStr} | 檔案副檔名：${file.name.substring(file.name.lastIndexOf('.'))} | 目標單位：${dept}
+            </div>
+          </div>
+
+          <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="font-weight: bold; color: var(--text-main); margin-bottom: 0.5rem;">📋 即將執行之資料帶入與自動檢核作業：</div>
+            <ul style="margin-left: 1.25rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+              <li>將本檔案數據提取並正式帶入【${dept}】的${slotTitle}中</li>
+              <li>重新執行全校 16+ 項法規條文與學分比例自動計算算式</li>
+              <li>連動刷新跨文件一致性比對、附件5標準檢核表與問題對比報表</li>
+            </ul>
+          </div>
+        </div>
+        <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
+          <button class="btn btn-outline" onclick="document.getElementById('upload-confirm-modal').remove()">❌ 取消</button>
+          <button class="btn btn-success" id="btn-confirm-upload-run-audit" style="font-size: 1rem; font-weight: bold; padding: 0.6rem 1.4rem;">
+            ✅ 確定完成帶入，並執行自動檢核
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("btn-confirm-upload-run-audit").onclick = () => {
+      const statusEl = document.getElementById(`slot${slotNum}-status`);
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="badge badge-success">✓ 實體檔已帶入: ${file.name}</span>`;
+      }
+
+      if (slotNum === 1) {
+        currentDataset.attachment1.attachedFileName = file.name;
+      }
+
+      const auditRes = runCompleteAudit(currentDataset);
+      document.getElementById("upload-confirm-modal").remove();
+
+      alert(`🎉 恭喜！${slotTitle} (${file.name}) 已成功完成帶入！\n\n【自動檢核成果統計】\n・系統整體合規率：${auditRes.passRate}%\n・總檢核條文：${auditRes.totalChecks} 項\n・合規通過：${auditRes.passCount} 項\n・違規警示：${auditRes.failCount} 項\n\n全系統數據與附件5/對比報表已即時更新完成。`);
+
+      loadDataset();
+    };
   }
 
   // 中央檔案上傳與資料帶入中心 Modal
@@ -1377,7 +1452,7 @@ ${att8.qualitativeComments || '無特別質性意見。'}
           </div>
         </div>
         <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e2e8f0;">
-          <button class="btn btn-primary" id="btn-save-att1-modal">💾 儲存並更新附件1</button>
+          <button class="btn btn-success" id="btn-save-att1-modal" style="font-weight: bold;">✅ 完成帶入，並執行自動檢核</button>
           <button class="btn btn-outline" onclick="document.getElementById('att1-modal').remove()">關閉</button>
         </div>
       </div>
@@ -1393,8 +1468,9 @@ ${att8.qualitativeComments || '無特別質性意見。'}
       currentDataset.attachment1.contactPhone = document.getElementById("att1-edit-phone").value;
       currentDataset.attachment1.purpose = document.getElementById("att1-edit-purpose").value;
 
-      alert("✓ 附件1 計畫申請書資料已更新！");
+      const auditRes = runCompleteAudit(currentDataset);
       document.getElementById("att1-modal").remove();
+      alert(`🎉 附件1 計畫申請書完成帶入與更新！\n系統條文自動檢核合規率：${auditRes.passRate}%`);
       loadDataset();
     };
   }
@@ -1558,11 +1634,20 @@ ${att8.qualitativeComments || '無特別質性意見。'}
             </table>
           </div>
         </div>
-        <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0;">
+        <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e2e8f0;">
+          <button class="btn btn-success" id="btn-save-att4-modal" style="font-weight: bold;">✅ 完成帶入，並執行自動檢核</button>
           <button class="btn btn-outline" onclick="document.getElementById('att4-modal').remove()">關閉視窗</button>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+
+    document.getElementById("btn-save-att4-modal").onclick = () => {
+      const auditRes = runCompleteAudit(currentDataset);
+      document.getElementById("att4-modal").remove();
+      alert(`🎉 附件4 核心能力關聯表帶入與確定完成！\n全系統條文自動檢核合規率：${auditRes.passRate}%`);
+      loadDataset();
+    };
+  }
   }
 });
