@@ -1749,5 +1749,4 @@ ${att8.qualitativeComments || '無特別質性意見。'}
       loadDataset();
     };
   }
-  }
 });
