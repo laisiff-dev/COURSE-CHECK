@@ -6,10 +6,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentRole = "academic"; 
 
   let workflowState = {
-    gate1: { status: "PASSED", reviewer: "教務處課務註冊組承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經常門經費。" },
+    gate1: { status: "PASSED", deptSubmitted: true, deptSubmittedDate: "115年09月19日 15:30", reviewer: "教務處課務註冊組承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經常門經費。" },
     gate2: { status: "PASSED", reviewer: "系上承辦人彙整 (張美珍 專家)", date: "115年10月15日", notes: "系上完成校外專家外審，附件8意見表已回收。" },
     gate3: { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月05日", notes: "教務處最後管考核可，完成附件10經費核銷結案。" },
     logs: [
+      { step: "第一關：系所帶入與送出", action: "🟢 系所助理簽署送出", user: "護理系 助理", time: "115-09-19 15:30", comment: "附件1~4帶入完成，條文合規率100%，簽署送出至教務處。" },
       { step: "第一關：計畫管考審核", action: "🟢 教務處核定通過", user: "教務處業務承辦人", time: "115-09-20 10:15", comment: "經費核定通過，准予系上提出外審申請。" },
       { step: "第二關：專家外審審查", action: "🟢 專家審查通過", user: "張美珍 教授 / 系承辦人", time: "115-10-15 14:30", comment: "系上收回附件8審查意見，同意課程結構規劃。" },
       { step: "最後一關：成果與核銷", action: "🟢 教務處核銷結案", user: "教務處業務承辦人", time: "115-11-05 16:00", comment: "教務處最終管考無誤，完成經費核銷結案。" }
@@ -109,11 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
     auditor = new CourseAuditor(currentDataset);
 
     if (key === "2elderly") {
-      workflowState.gate1 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年09月21日", notes: "教務處初審發現必選修比例(3.0倍)爆表，退回系上修正。" };
+      workflowState.gate1 = { status: "DEPT_DRAFT", deptSubmitted: false, deptSubmittedDate: "-", reviewer: "教務處業務承辦人", date: "-", notes: "高齡照護系助理已帶入附件1~4，發現必選修比例爆表(3.0倍)，系所評估修訂中。" };
       workflowState.gate2 = { status: "PENDING", reviewer: "系上承辦人 (王國華 專家)", date: "-", notes: "待第一階段退回修正完成後外審。" };
       workflowState.gate3 = { status: "PENDING", reviewer: "教務處業務承辦人", date: "-", notes: "待修正完成後由教務處最後管考。" };
     } else {
-      workflowState.gate1 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經費。" };
+      workflowState.gate1 = { status: "PASSED", deptSubmitted: true, deptSubmittedDate: "115年09月19日 15:30", reviewer: "教務處業務承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經費。" };
       workflowState.gate2 = { status: "PASSED", reviewer: "系上承辦人 (張美珍 專家)", date: "115年10月15日", notes: "系上完成外審收回附件8意見表。" };
       workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月05日", notes: "教務處最後管考核可，完成核銷結案。" };
     }
@@ -570,6 +571,509 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  function getROCFormattedNow() {
+    const d = new Date();
+    const rocYear = d.getFullYear() - 1911;
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${rocYear}年${mm}月${dd}日 ${hh}:${min}:${ss}`;
+  }
+
+  function runCompleteAudit(ds) {
+    const a = new CourseAuditor(ds || currentDataset);
+    return a.runFullAudit();
+  }
+
+  function renderRuleAuditTable(ruleResults) {
+    const tbody = document.getElementById("tbody-rule-audit");
+    if (!tbody || !ruleResults) return;
+
+    tbody.innerHTML = ruleResults.map(r => {
+      const isPass = r.status === "PASS";
+      const statusBadge = isPass 
+        ? `<span class="badge badge-success">🟢 符合 (PASS)</span>` 
+        : `<span class="badge badge-danger">🔴 不符合 (FAIL)</span>`;
+      
+      return `
+        <tr>
+          <td style="font-weight: bold; text-align: center;"><code>${r.ruleId}</code></td>
+          <td><strong>${r.title}</strong></td>
+          <td><span class="badge badge-secondary">${r.category}</span></td>
+          <td><span style="font-size: 0.85rem; color: #334155;">${r.courseHits || "-"}</span></td>
+          <td style="text-align: center;">${statusBadge}</td>
+          <td style="font-size: 0.85rem; color: ${isPass ? '#166534' : '#991b1b'};">${r.remark}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderCrossAuditTable(crossResults) {
+    const tbody = document.getElementById("tbody-cross-audit");
+    if (!tbody || !crossResults) return;
+
+    tbody.innerHTML = crossResults.map(c => {
+      const isPass = c.status === "PASS";
+      const statusBadge = isPass 
+        ? `<span class="badge badge-success">🟢 一致</span>` 
+        : `<span class="badge badge-danger">🔴 不一致 (需核對)</span>`;
+      
+      return `
+        <tr>
+          <td style="font-weight: bold;"><span class="badge badge-primary">${c.checkGroup}</span></td>
+          <td><strong>${c.title}</strong></td>
+          <td style="text-align: center;">${statusBadge}</td>
+          <td style="font-size: 0.85rem; color: ${isPass ? '#166534' : '#991b1b'};">${c.details}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderOutlineAuditTable(outlineResults) {
+    const tbody = document.getElementById("tbody-outline-audit");
+    if (!tbody || !outlineResults) return;
+    tbody.innerHTML = outlineResults.map(o => `
+      <tr>
+        <td><strong>${o.courseName}</strong></td>
+        <td>${o.enCourseName || '-'}</td>
+        <td style="text-align: center;">${o.status === "PASS" ? '<span class="badge badge-success">🟢 符合 (≥6單元)</span>' : '<span class="badge badge-danger">🔴 未達標</span>'}</td>
+        <td>${o.remark}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderCourseScheduleTable(courses) {
+    const tbody = document.getElementById("tbody-courses");
+    if (!tbody || !courses) return;
+
+    tbody.innerHTML = courses.map((c, idx) => `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td><span class="badge badge-secondary">${c.type}</span></td>
+        <td><code>${c.code}</code> <strong>${c.name}</strong></td>
+        <td style="font-size: 0.85rem; color: #475569;">${c.enName || '-'}</td>
+        <td style="text-align: center;">${c.credits} 學分 / ${c.hours} 時</td>
+        <td style="text-align: center;">${c.year}年級 第${c.semester}學期</td>
+        <td>${(c.attr || []).map(a => `<span class="badge badge-success" style="font-size: 0.75rem;">${a}</span>`).join(" ")}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderWorkflowStepBar() {
+    const container = document.getElementById("workflow-steps-container");
+    if (!container) return;
+
+    const g1 = workflowState.gate1.status;
+    const g2 = workflowState.gate2.status;
+    const g3 = workflowState.gate3.status;
+
+    const getStepBadge = (status, passLabel, pendingLabel, draftLabel) => {
+      if (status === "PASSED") return `<span class="badge badge-success">✓ ${passLabel}</span>`;
+      if (status === "SUBMITTED_TO_ACADEMIC") return `<span class="badge badge-info">⏳ 待教務初審</span>`;
+      if (status === "DEPT_DRAFT") return `<span class="badge badge-warning">📂 ${draftLabel || '系所帶入中'}</span>`;
+      if (status === "REJECTED") return `<span class="badge badge-danger">🔴 退回系所修訂</span>`;
+      return `<span class="badge badge-secondary">□ 待處理</span>`;
+    };
+
+    container.innerHTML = `
+      <div class="workflow-step-card ${g1 === 'PASSED' ? 'active' : ''}">
+        <div class="step-num">Step 1</div>
+        <div class="step-info">
+          <div class="step-title">第一關：教務處初審管考</div>
+          <div class="step-desc">系助理帶入檔與即時檢核 ➔ 簽署送出 ➔ 教務初審經費核定</div>
+          <div style="margin-top: 0.3rem;">${getStepBadge(g1, "初審核定通過", "待教務初審", "系助理填報帶入中")}</div>
+        </div>
+      </div>
+
+      <div class="workflow-step-card ${g2 === 'PASSED' ? 'active' : ''}">
+        <div class="step-num">Step 2</div>
+        <div class="step-info">
+          <div class="step-title">第二關：專家外審與意見對比</div>
+          <div class="step-desc">校外專家線上意見 (附件8) / 紙本親簽與對比報表</div>
+          <div style="margin-top: 0.3rem;">${getStepBadge(g2, "外審審查完成", "待外審收件", "待外審處理")}</div>
+        </div>
+      </div>
+
+      <div class="workflow-step-card ${g3 === 'PASSED' ? 'active' : ''}">
+        <div class="step-num">Step 3</div>
+        <div class="step-info">
+          <div class="step-title">最後一關：教務處核銷結案</div>
+          <div class="step-desc">附件10 PDCA成果與改善對照表管考核銷</div>
+          <div style="margin-top: 0.3rem;">${getStepBadge(g3, "完成核銷結案", "待核銷結案", "待結案")}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderHumanCheckpointGates() {
+    renderGate1ControlBox();
+    renderGate2ControlBox();
+    renderGate3ControlBox();
+  }
+
+  function renderGate1ControlBox() {
+    const container = document.getElementById("gate1-control-box");
+    if (!container) return;
+
+    const g1 = workflowState.gate1 || { status: "DEPT_DRAFT" };
+    const auditRes = auditor.runFullAudit();
+    const dept = currentDataset.deptName || "專業系所";
+
+    let contentHtml = "";
+
+    // 1. 專業系所助理視角 (currentRole === "dept")
+    if (currentRole === "dept") {
+      if (g1.status === "DEPT_DRAFT" || g1.status === "REJECTED") {
+        contentHtml = `
+          <div class="checkpoint-box" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0284c7; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <div>
+                <h3 style="color: #0369a1; font-size: 1.15rem; font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                  🏫 第一關 (Step 1a)：【${dept}】系所助理 - 檔案帶入、即時檢核評估與簽署送出專區
+                </h3>
+                <div style="font-size: 0.85rem; color: #0c4a6e; margin-top: 0.3rem;">
+                  📌 <strong>工作流程指引：</strong>第一關資料帶入者為系上助理。帶入附件1~4後，系統已<strong>【即時呈現下方檢核結果】</strong>。請仔細評估合規率後，點擊「簽署並送出」，案子才正式進入教務處初審。
+                </div>
+              </div>
+              <span class="badge badge-warning" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">📂 系所帶入草稿階段</span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #bae6fd; border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-main);">
+                  即時條文檢核評估摘要：整體合規率 <span style="font-size: 1.2rem; color: ${auditRes.passRate === 100 ? '#059669' : '#dc2626'}; font-weight: bold;">${auditRes.passRate}%</span>
+                </div>
+                <div style="font-size: 0.8rem; color: #475569; margin-top: 0.2rem;">
+                  共 ${auditRes.totalChecks} 項檢核條文 | 🟢 通過 ${auditRes.passCount} 項 | 🔴 不符 ${auditRes.failCount} 項 (若有不符項，可先修訂後再送出)
+                </div>
+              </div>
+              <button class="btn btn-outline" style="font-size: 0.85rem;" onclick="window.scrollTo({top: 600, behavior: 'smooth'});">👇 滾動查看下方完整檢核表</button>
+            </div>
+
+            ${g1.status === 'REJECTED' ? `
+              <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; color: #991b1b; font-size: 0.85rem;">
+                <strong>🔴 教務處退回通知：</strong> ${g1.notes || '請修正必選修學分比重後重新送出'} (退回時間：${g1.date || '-'})
+              </div>
+            ` : ''}
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+              <button class="btn btn-success" id="btn-dept-submit-to-academic" style="font-size: 1rem; font-weight: bold; padding: 0.65rem 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);">
+                ✍️ 確定檢核結果無誤，線上簽署並送出至教務處承辦人
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        contentHtml = `
+          <div class="checkpoint-box" style="background: #f0fdf4; border: 2px solid #16a34a; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="color: #15803d; font-size: 1.15rem; font-weight: bold; margin: 0;">
+                  🏫 第一關 (Step 1a)：【${dept}】系所助理 - 計畫案已成功簽署送出
+                </h3>
+                <div style="font-size: 0.85rem; color: #166534; margin-top: 0.3rem;">
+                  ✓ 送出時間：<strong>${g1.deptSubmittedDate || '115年09月19日 15:30'}</strong> | 當前處室初審狀態：<strong>【${g1.status === 'PASSED' ? '🟢 教務處初審核定通過' : '⏳ 待教務處業務承辦人初審'}】</strong>
+                </div>
+              </div>
+              <span class="badge badge-success" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+                ${g1.status === 'PASSED' ? '🟢 教務初審核定通過' : '✓ 已送出教務處'}
+              </span>
+            </div>
+
+            ${g1.status === 'SUBMITTED_TO_ACADEMIC' ? `
+              <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                <button class="btn btn-warning" id="btn-dept-withdraw" style="font-size: 0.85rem;">
+                  🔄 撤回送出 (重新修正草稿資料)
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+    } 
+    // 2. 教務處業務承辦人視角 (currentRole === "academic")
+    else if (currentRole === "academic") {
+      if (g1.status === "DEPT_DRAFT") {
+        contentHtml = `
+          <div class="checkpoint-box" style="background: #fffbeb; border: 2px solid #f59e0b; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="color: #b45309; font-size: 1.15rem; font-weight: bold; margin: 0;">
+                  🏢 第一關 (Step 1b)：【教務處課務註冊組】第一關初審管考與經常門經費核定
+                </h3>
+                <div style="font-size: 0.85rem; color: #92400e; margin-top: 0.3rem;">
+                  ⏳ <strong>目前狀態：</strong>【${dept}】系所助理正於 Step 1a 進行檔案帶入與即時檢核中，尚未點擊「簽署送出」。
+                </div>
+              </div>
+              <span class="badge badge-warning" style="font-size: 0.9rem;">⏳ 待系所助理送出</span>
+            </div>
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+              <button class="btn btn-outline" id="btn-sim-dept-submit" style="font-size: 0.85rem;">
+                ⚡ 測試功能：模擬系所助理已簽署送出
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (g1.status === "SUBMITTED_TO_ACADEMIC") {
+        contentHtml = `
+          <div class="checkpoint-box" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #2563eb; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <div>
+                <h3 style="color: #1e40af; font-size: 1.15rem; font-weight: bold; margin: 0;">
+                  🏢 第一關 (Step 1b)：【教務處課務註冊組】第一關初審管考與經常門經費核定
+                </h3>
+                <div style="font-size: 0.85rem; color: #1e3a8a; margin-top: 0.3rem;">
+                  📥 <strong>收到系所申請：</strong>【${dept}】系所助理已於 <strong>${g1.deptSubmittedDate || '115年09月19日'}</strong> 線上簽署並送出外審計畫書！
+                </div>
+              </div>
+              <span class="badge badge-info" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">📥 待教務處初審核定</span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
+              <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-main);">
+                系所帶入附件1~4自動檢核合規率：<span style="color: ${auditRes.passRate === 100 ? '#059669' : '#dc2626'};">${auditRes.passRate}%</span> | 預算金額：NT$ ${(currentDataset.attachment1.budget || 5000).toLocaleString()} 元
+              </div>
+              <div style="font-size: 0.8rem; color: #475569; margin-top: 0.2rem;">
+                經教務處業務承辦人初審管考確認無誤後，請點擊下方按鈕核定通過並撥付經常門經費。
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+              <button class="btn btn-danger" id="btn-academic-reject" style="font-size: 0.9rem;">
+                🔴 初審不合規 (退回系所修訂)
+              </button>
+              <button class="btn btn-success" id="btn-academic-pass" style="font-size: 0.95rem; font-weight: bold; padding: 0.6rem 1.25rem;">
+                🟢 教務處初審核定通過 (發放經常門經費，准予啟動第二關外審)
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (g1.status === "PASSED") {
+        contentHtml = `
+          <div class="checkpoint-box" style="background: #f0fdf4; border: 2px solid #16a34a; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="color: #15803d; font-size: 1.15rem; font-weight: bold; margin: 0;">
+                  🏢 第一關 (Step 1b)：【教務處課務註冊組】初審核定結果 - 🟢 已核定通過
+                </h3>
+                <div style="font-size: 0.85rem; color: #166534; margin-top: 0.3rem;">
+                  ✓ 核定日期：<strong>${g1.date || '115年09月20日'}</strong> | 審核人員：<strong>${g1.reviewer || '教務處業務承辦人'}</strong><br>
+                  ✓ 管考評語：<strong>${g1.notes || '教務處初審核定通過，核發經常門經費。'}</strong>
+                </div>
+              </div>
+              <span class="badge badge-success" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">🟢 初審核定通過</span>
+            </div>
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+              <button class="btn btn-outline" id="btn-academic-reset" style="font-size: 0.85rem;">
+                🔄 重新審核第一關
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (g1.status === "REJECTED") {
+        contentHtml = `
+          <div class="checkpoint-box" style="background: #fef2f2; border: 2px solid #ef4444; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="color: #b91c1c; font-size: 1.15rem; font-weight: bold; margin: 0;">
+                  🏢 第一關 (Step 1b)：【教務處課務註冊組】初審核定結果 - 🔴 已退回系所
+                </h3>
+                <div style="font-size: 0.85rem; color: #991b1b; margin-top: 0.3rem;">
+                  🔴 退回日期：<strong>${g1.date || '115年09月21日'}</strong> | 退回原因：<strong>${g1.notes}</strong>
+                </div>
+              </div>
+              <span class="badge badge-danger" style="font-size: 0.9rem;">🔴 退回系所</span>
+            </div>
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+              <button class="btn btn-outline" id="btn-academic-reset" style="font-size: 0.85rem;">
+                🔄 重設管考狀態
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    } 
+    // 3. 校外專家委員視角 (currentRole === "reviewer")
+    else {
+      contentHtml = `
+        <div class="checkpoint-box" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <div style="font-size: 0.9rem; color: #475569;">
+            🎓 <strong>校外審查專家提醒：</strong>第一關為輔英系所助理與教務處計畫管考階段。專家委員請點擊上方<strong>【第二關：系上外審與專家審查】</strong>分頁進行附件8線上審查意見填寫與個資同意書簽具。
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = contentHtml;
+
+    // 綁定第一關控制卡按鈕事件
+    const btnDeptSubmit = document.getElementById("btn-dept-submit-to-academic");
+    if (btnDeptSubmit) {
+      btnDeptSubmit.onclick = () => {
+        workflowState.gate1.status = "SUBMITTED_TO_ACADEMIC";
+        workflowState.gate1.deptSubmitted = true;
+        workflowState.gate1.deptSubmittedDate = getROCFormattedNow();
+        
+        workflowState.logs.unshift({
+          step: "第一關：系所帶入與送出",
+          action: "🟢 系所助理簽署送出",
+          user: `${dept} 助理`,
+          time: getROCFormattedNow(),
+          comment: `附件1~4資料帶入完成 (條文合規率 ${auditRes.passRate}%)，線上簽署送出至教務處。`
+        });
+
+        alert(`🎉 【${dept}】附件1~4資料與條文檢核結果已成功簽署並送出至教務處業務承辦人！\n案件狀態切換為：待教務處初審管考。`);
+        runAuditAndUpdateUI();
+      };
+    }
+
+    const btnDeptWithdraw = document.getElementById("btn-dept-withdraw");
+    if (btnDeptWithdraw) {
+      btnDeptWithdraw.onclick = () => {
+        workflowState.gate1.status = "DEPT_DRAFT";
+        workflowState.logs.unshift({
+          step: "第一關：系所撤回",
+          action: "🟡 系所助理撤回草稿",
+          user: `${dept} 助理`,
+          time: getROCFormattedNow(),
+          comment: "系所助理撤回送出檔，進行資料補正與重新帶入。"
+        });
+        alert("✓ 已成功撤回計畫送出！案子回到 Step 1a 系所助理草稿階段。");
+        runAuditAndUpdateUI();
+      };
+    }
+
+    const btnSimSubmit = document.getElementById("btn-sim-dept-submit");
+    if (btnSimSubmit) {
+      btnSimSubmit.onclick = () => {
+        workflowState.gate1.status = "SUBMITTED_TO_ACADEMIC";
+        workflowState.gate1.deptSubmitted = true;
+        workflowState.gate1.deptSubmittedDate = getROCFormattedNow();
+        runAuditAndUpdateUI();
+      };
+    }
+
+    const btnAcademicPass = document.getElementById("btn-academic-pass");
+    if (btnAcademicPass) {
+      btnAcademicPass.onclick = () => {
+        workflowState.gate1.status = "PASSED";
+        workflowState.gate1.reviewer = "教務處課務註冊組承辦人";
+        workflowState.gate1.date = getROCFormattedNow();
+        workflowState.gate1.notes = "教務處初審核定通過，准予核發經常門經費。";
+
+        workflowState.logs.unshift({
+          step: "第一關：計畫管考審核",
+          action: "🟢 教務處核定通過",
+          user: "教務處業務承辦人",
+          time: getROCFormattedNow(),
+          comment: "第一關初審合規，核發經常門經費，准予系上開啟第二關校外專家外審。"
+        });
+
+        alert("🎉 教務處初審核定通過！已核發經常門經費 $5,000 元，案件進入第二關校外專家審查階段。");
+        runAuditAndUpdateUI();
+      };
+    }
+
+    const btnAcademicReject = document.getElementById("btn-academic-reject");
+    if (btnAcademicReject) {
+      btnAcademicReject.onclick = () => {
+        const reason = prompt("請輸入退回系所修訂之原因或說明：", "發現必選修比例不符規定，請系所重新檢討並調整課程結構。");
+        if (reason !== null) {
+          workflowState.gate1.status = "REJECTED";
+          workflowState.gate1.reviewer = "教務處業務承辦人";
+          workflowState.gate1.date = getROCFormattedNow();
+          workflowState.gate1.notes = reason;
+
+          workflowState.logs.unshift({
+            step: "第一關：計畫管考審核",
+            action: "🔴 初審退回系所",
+            user: "教務處業務承辦人",
+            time: getROCFormattedNow(),
+            comment: `初審不符，退回系所修訂。原因：${reason}`
+          });
+
+          alert("🔴 已成功將計畫退回系所修訂！");
+          runAuditAndUpdateUI();
+        }
+      };
+    }
+
+    const btnAcademicReset = document.getElementById("btn-academic-reset");
+    if (btnAcademicReset) {
+      btnAcademicReset.onclick = () => {
+        workflowState.gate1.status = "SUBMITTED_TO_ACADEMIC";
+        runAuditAndUpdateUI();
+      };
+    }
+  }
+
+  function renderGate2ControlBox() {
+    const container = document.getElementById("gate2-control-box");
+    if (!container) return;
+    const g2 = workflowState.gate2 || { status: "PENDING" };
+
+    container.innerHTML = `
+      <div class="checkpoint-box" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="color: var(--primary-color); font-size: 1.05rem; font-weight: bold; margin: 0;">
+              🎓 第二關：系上外審與專家審查管考專區 (附件7, 8, 9)
+            </h3>
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 0.25rem;">
+              審查狀態：<strong>${g2.status === 'PASSED' ? '🟢 專家審查意見表已收齊與對比' : '⏳ 待專家線上填寫或上傳紙本親簽檔'}</strong>
+            </div>
+          </div>
+          <span class="badge ${g2.status === 'PASSED' ? 'badge-success' : 'badge-warning'}">
+            ${g2.status === 'PASSED' ? '🟢 外審完成' : '⏳ 進行中'}
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderGate3ControlBox() {
+    const container = document.getElementById("gate3-control-box");
+    if (!container) return;
+    const g3 = workflowState.gate3 || { status: "PENDING" };
+
+    container.innerHTML = `
+      <div class="checkpoint-box" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="color: var(--primary-color); font-size: 1.05rem; font-weight: bold; margin: 0;">
+              🏆 第三階段：教務處核銷與結案管考 (附件10)
+            </h3>
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 0.25rem;">
+              結案狀態：<strong>${g3.status === 'PASSED' ? '🟢 教務處已完成核銷結案' : '⏳ 待系所陳報附件10成果與教務處管考結案'}</strong>
+            </div>
+          </div>
+          <span class="badge ${g3.status === 'PASSED' ? 'badge-success' : 'badge-warning'}">
+            ${g3.status === 'PASSED' ? '🟢 結案' : '⏳ 待結案'}
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderApprovalHistoryLogs() {
+    const tbody = document.getElementById("tbody-approval-logs");
+    if (!tbody) return;
+
+    const logs = workflowState.logs || [];
+    tbody.innerHTML = logs.map((log, idx) => `
+      <tr>
+        <td style="text-align: center;">${logs.length - idx}</td>
+        <td><strong>${log.step}</strong></td>
+        <td>${log.action}</td>
+        <td><span class="badge badge-secondary">${log.user}</span></td>
+        <td><span style="font-size: 0.85rem; color: #475569;">${log.time}</span></td>
+        <td style="font-size: 0.85rem; color: #334155;">${log.comment}</td>
+      </tr>
+    `).join("");
   }
 
   // 核心亮點：附件8 專家線上填寫與紙本親簽掃描檔管理專區
