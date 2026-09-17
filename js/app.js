@@ -1,18 +1,24 @@
-/* 輔英科技大學「課程結構外審」自動檢核系統 - UI 主控與三階段人工考點管理 */
+/* 輔英科技大學「課程結構外審」自動檢核系統 - UI 主控與權限分工管理 */
 
 document.addEventListener("DOMContentLoaded", () => {
   let currentDataset = window.SampleDataPresets["4nursing"];
   let auditor = new CourseAuditor(currentDataset);
 
-  // 三階段考點決策狀態 (Decision Trail State)
+  // 當前登入身分權限角色
+  // "academic" = 教務處業務承辦人 (管考權限：考點1初審經費核定 & 考點3最後結案核銷)
+  // "dept"     = 專業系所外審承辦人 (執行權限：附件1~4維護、寄送資料、彙整附件7/8/9、上傳附件10)
+  // "reviewer" = 校外外審專家委員 (執行權限：填寫附件8意見表 & 簽具附件9同意書)
+  let currentRole = "academic"; 
+
+  // 三階段考點決策狀態
   let workflowState = {
-    gate1: { status: "PASSED", reviewer: "課務註冊組", date: "115年09月20日", notes: "附件1~4完整，系統自動檢核通過。" },
-    gate2: { status: "PASSED", reviewer: "張美珍 專家", date: "115年10月15日", notes: "量化評定皆高，質性建議已記錄於附件8。" },
-    gate3: { status: "PASSED", reviewer: "教務處 (教務長)", date: "115年11月05日", notes: "成果報告附件10與改善對照表核章完備，予以結案。" },
+    gate1: { status: "PASSED", reviewer: "教務處課務註冊組承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經常門經費。" },
+    gate2: { status: "PASSED", reviewer: "系上承辦人彙整 (張美珍 專家)", date: "115年10月15日", notes: "系上完成校外專家外審，附件8意見表已回收。" },
+    gate3: { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月05日", notes: "教務處最後管考核可，完成附件10經費核銷結案。" },
     logs: [
-      { step: "考點1：系統初審", action: "🟢 初審通過送出", user: "課務組承辦人", time: "115-09-20 10:15", comment: "附件1~4上傳齊全，自動檢核合規率 100%。" },
-      { step: "考點2：外審專家審查", action: "🟢 專家審查通過", user: "張美珍 教授", time: "115-10-15 14:30", comment: "同意課程結構規劃，建議增加 AI 應用單元。" },
-      { step: "考點3：最終簽核", action: "🟢 最終結案核可", user: "教務長", time: "115-11-05 16:00", comment: "系所已完成修正對照，准予結案。" }
+      { step: "第一關：計畫管考審核", action: "🟢 教務處核定通過", user: "教務處業務承辦人", time: "115-09-20 10:15", comment: "經費核定通過，准予系上提出外審申請。" },
+      { step: "第二關：專家外審審查", action: "🟢 專家審查通過", user: "張美珍 教授 / 系承辦人", time: "115-10-15 14:30", comment: "系上收回附件8審查意見，同意課程結構規劃。" },
+      { step: "最後一關：成果與核銷", action: "🟢 教務處核銷結案", user: "教務處業務承辦人", time: "115-11-05 16:00", comment: "教務處最終管考無誤，完成經費核銷結案。" }
     ]
   };
 
@@ -23,9 +29,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLoadPreset = document.getElementById("btn-load-preset");
   const btnRunAudit = document.getElementById("btn-run-audit");
   const btnPrintAtt5 = document.getElementById("btn-print-att5");
+  const rolePills = document.querySelectorAll(".role-pill");
 
   // 初始化載入
   loadPresetData("4nursing");
+
+  // 身分切換事件
+  rolePills.forEach(pill => {
+    pill.addEventListener("click", () => {
+      rolePills.forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentRole = pill.getAttribute("data-role");
+
+      updateRoleNoticeUI();
+      renderHumanCheckpointGates();
+    });
+  });
 
   // 分頁切換
   tabItems.forEach(tab => {
@@ -42,7 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 一鍵載入預設資料組
   if (btnLoadPreset) {
     btnLoadPreset.addEventListener("click", () => {
       const key = presetSelect ? presetSelect.value : "4nursing";
@@ -50,14 +68,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 重新執行全套檢核
   if (btnRunAudit) {
     btnRunAudit.addEventListener("click", () => {
       runAuditAndUpdateUI();
     });
   }
 
-  // 列印按鈕
   if (btnPrintAtt5) {
     btnPrintAtt5.addEventListener("click", () => {
       window.print();
@@ -72,35 +88,46 @@ document.addEventListener("DOMContentLoaded", () => {
     currentDataset = JSON.parse(JSON.stringify(preset));
     auditor = new CourseAuditor(currentDataset);
 
-    // 根據範例調整考點初始狀態 (例如：高齡照護系預設為違規且需修正)
     if (key === "2elderly") {
-      workflowState.gate1 = { status: "REJECTED", reviewer: "課務註冊組", date: "115年09月21日", notes: "必選修比例(3.0倍)爆表，倫理開在1年級，已退回系所修正。" };
-      workflowState.gate2 = { status: "PENDING", reviewer: "王國華 專家", date: "-", notes: "待第一階段退回修正完成後審查。" };
-      workflowState.gate3 = { status: "PENDING", reviewer: "教務處", date: "-", notes: "待修正完成後核章。" };
+      workflowState.gate1 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年09月21日", notes: "教務處初審發現必選修比例(3.0倍)爆表，退回系上修正。" };
+      workflowState.gate2 = { status: "PENDING", reviewer: "系上承辦人 (王國華 專家)", date: "-", notes: "待第一階段退回修正完成後外審。" };
+      workflowState.gate3 = { status: "PENDING", reviewer: "教務處業務承辦人", date: "-", notes: "待修正完成後由教務處最後管考。" };
       workflowState.logs.unshift({
-        step: "考點1：系統初審",
-        action: "🔴 考點退回系所修正",
-        user: "課務組承辦人",
+        step: "第一關：計畫管考審核",
+        action: "🔴 教務處退回系上修正",
+        user: "教務處業務承辦人",
         time: "115-09-21 11:00",
-        comment: "發現 4 項不符合條文（必選修比過高、倫理年級不符、大綱不足6項），予以退回。"
+        comment: "發現必選修比過高與倫理年級不符，退回系上重修正。"
       });
     } else {
-      workflowState.gate1 = { status: "PASSED", reviewer: "課務註冊組", date: "115年09月20日", notes: "附件1~4完整，系統自動檢核通過。" };
-      workflowState.gate2 = { status: "PASSED", reviewer: "張美珍 專家", date: "115年10月15日", notes: "量化評定皆高，質性建議已記錄於附件8。" };
-      workflowState.gate3 = { status: "PASSED", reviewer: "教務處 (教務長)", date: "115年11月05日", notes: "成果報告附件10與改善對照表核章完備，予以結案。" };
+      workflowState.gate1 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經費。" };
+      workflowState.gate2 = { status: "PASSED", reviewer: "系上承辦人 (張美珍 專家)", date: "115年10月15日", notes: "系上完成外審收回附件8意見表。" };
+      workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月05日", notes: "教務處最後管考核可，完成核銷結案。" };
     }
 
     runAuditAndUpdateUI();
   }
 
-  // 執行全套檢核並刷新所有 UI
+  function updateRoleNoticeUI() {
+    const noticeEl = document.getElementById("current-role-display");
+    if (noticeEl) {
+      if (currentRole === "academic") {
+        noticeEl.innerHTML = `<span class="badge badge-success" style="font-size: 0.85rem;">🏢 當前身分：教務處業務承辦人（擁有第一關計畫管考與最後一關核銷管考權限）</span>`;
+      } else if (currentRole === "dept") {
+        noticeEl.innerHTML = `<span class="badge badge-warning" style="font-size: 0.85rem;">🏫 當前身分：專業系所外審承辦人（擁有附件1~4維護、外審聯繫與附件10成果上傳權限）</span>`;
+      } else {
+        noticeEl.innerHTML = `<span class="badge badge-secondary" style="font-size: 0.85rem;">🎓 當前身分：校外外審專家委員（擁有附件8意見表填寫與附件9個資同意書簽具權限）</span>`;
+      }
+    }
+  }
+
+  // 執行檢核與 UI 更新
   function runAuditAndUpdateUI() {
     const auditRes = auditor.runFullAudit();
 
-    // 1. 更新頂部 3 階段進度條與狀態
+    updateRoleNoticeUI();
     renderWorkflowStepBar();
 
-    // 2. 更新 Dashboard 數據卡片
     const elRate = document.getElementById("stat-pass-rate");
     const elTotal = document.getElementById("stat-total-checks");
     const elPass = document.getElementById("stat-pass-count");
@@ -111,34 +138,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (elPass) elPass.innerText = auditRes.passCount;
     if (elFail) elFail.innerText = auditRes.failCount;
 
-    // 3. 渲染條文與跨表檢核視圖 (階段1)
     renderRuleAuditTable(auditRes.ruleResults);
     renderCrossAuditTable(auditRes.crossResults);
     renderOutlineAuditTable(auditRes.outlineResults);
 
-    // 4. 渲染科目表視圖 (附件2)
     renderCourseScheduleTable(currentDataset.attachment2);
-
-    // 5. 渲染附件5 (科目表檢核表)
     renderAttachment5Report(auditRes.ruleResults);
-
-    // 6. 渲染附件8 (專家意見表 - 階段2)
     renderAttachment8Report(currentDataset.attachment8);
-
-    // 7. 渲染附件9 (個資同意書 - 階段2)
     renderAttachment9Hub(currentDataset.attachment9);
-
-    // 8. 渲染附件10 (成果報告與改善追蹤 - 階段3)
     renderAttachment10Report(currentDataset.attachment10);
 
-    // 9. 渲染 3 大考點審核決策模組 (Gate 1, Gate 2, Gate 3)
     renderHumanCheckpointGates();
-
-    // 10. 渲染考點決策歷史紀錄 Trail
     renderApprovalHistoryLogs();
   }
 
-  // 頂部三階段進度條渲染
+  // 頂部三階段進度條
   function renderWorkflowStepBar() {
     const container = document.getElementById("workflow-steps-container");
     if (!container) return;
@@ -151,178 +165,219 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="step-pill ${g1 === 'PASSED' ? 'passed' : (g1 === 'REJECTED' ? 'rejected' : 'active')}">
         <div class="step-num">1</div>
         <div class="step-info-text">
-          <div class="step-info-title">第一部分：系統自動檢核</div>
-          <div class="step-info-sub">附件1~4帶入與考點1初審 (${g1 === 'PASSED' ? '🟢 通過' : (g1 === 'REJECTED' ? '🔴 已退回' : '🟡 審核中')})</div>
+          <div class="step-info-title">第一關：教務處計畫管考與初審</div>
+          <div class="step-info-sub">【管考權限：教務處業務承辦人】(${g1 === 'PASSED' ? '🟢 核定通過' : (g1 === 'REJECTED' ? '🔴 已退回' : '🟡 審核中')})</div>
         </div>
       </div>
       <div style="font-size: 1.2rem; color: var(--text-muted);">➔</div>
       <div class="step-pill ${g2 === 'PASSED' ? 'passed' : (g2 === 'REJECTED' ? 'rejected' : (g1 === 'PASSED' ? 'active' : ''))}">
         <div class="step-num">2</div>
         <div class="step-info-text">
-          <div class="step-info-title">第二部分：專家外審審查</div>
-          <div class="step-info-sub">附件7,9帶入與附件8意見表 (${g2 === 'PASSED' ? '🟢 通過' : (g2 === 'REJECTED' ? '🔴 建議修正' : '⚪ 待審查')})</div>
+          <div class="step-info-title">第二關：系上執行外審與專家審查</div>
+          <div class="step-info-sub">【執行權限：系上外審承辦人 & 專家】(${g2 === 'PASSED' ? '🟢 外審完成' : (g2 === 'REJECTED' ? '🔴 建議修正' : '⚪ 待外審')})</div>
         </div>
       </div>
       <div style="font-size: 1.2rem; color: var(--text-muted);">➔</div>
       <div class="step-pill ${g3 === 'PASSED' ? 'passed' : (g3 === 'REJECTED' ? 'rejected' : (g2 === 'PASSED' ? 'active' : ''))}">
         <div class="step-num">3</div>
         <div class="step-info-text">
-          <div class="step-info-title">第三部分：系所成果與改善</div>
-          <div class="step-info-sub">附件10報告與改善追蹤簽核 (${g3 === 'PASSED' ? '🟢 結案' : '⚪ 待簽核'})</div>
+          <div class="step-info-title">最後一關：教務處成果核銷與結案</div>
+          <div class="step-info-sub">【管考權限：教務處業務承辦人】(${g3 === 'PASSED' ? '🟢 結案核銷' : '⚪ 待核銷'})</div>
         </div>
       </div>
     `;
   }
 
-  // 人工考點審核決策模組 (Gate 1, Gate 2, Gate 3)
+  // 考點管考權限卡片 (Gate 1, Gate 2, Gate 3)
   function renderHumanCheckpointGates() {
-    // 考點1 門檻
+    // 考點 1：教務處業務承辦人
     const g1Box = document.getElementById("gate1-control-box");
     if (g1Box) {
+      const isAcademic = currentRole === "academic";
       g1Box.innerHTML = `
-        <div class="checkpoint-gate-card">
+        <div class="checkpoint-gate-card" style="border-color: #0284c7;">
           <div class="gate-header">
-            <div class="gate-title">📌 考點 1：第一階段 系統初審人工考點 (課務註冊組 / 系所初審門檻)</div>
+            <div class="gate-title">
+              📌 第一關管考考點：教務處初審與經費核定
+              <span class="role-authority-badge">管考權限：教務處業務承辦人</span>
+            </div>
             <span class="badge ${workflowState.gate1.status === 'PASSED' ? 'badge-success' : 'badge-danger'}">
-              當前考點狀態：${workflowState.gate1.status === 'PASSED' ? '🟢 初審通過送出' : '🔴 已退回系所修正'}
+              當前狀態：${workflowState.gate1.status === 'PASSED' ? '🟢 教務處初審通過' : '🔴 已退回系上修正'}
             </span>
           </div>
-          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-            檢視系統針對附件1~4之自動檢核結果（附件5），審核人員得決定<strong>『送至校外專家審查』</strong>或<strong>『退回系所修正』</strong>：
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            由<strong>教務處業務承辦人</strong>審核系上帶入之附件1~4及附件5自動檢核結果，決定是否核定經常門經費並准予系上進行外審：
           </p>
-          <div class="gate-controls">
-            <div>
-              <label style="font-size: 0.8rem; font-weight: bold;">審核決策：</label>
-              <select id="gate1-action-select" class="form-select" style="width: 100%;">
-                <option value="APPROVE">🟢 考點合格：送至校外專家審查</option>
-                <option value="REJECT">🔴 考點不合格：退回系所重新修正</option>
-              </select>
+          ${isAcademic ? `
+            <div class="gate-controls">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: bold;">教務處管考決策：</label>
+                <select id="gate1-action-select" class="form-select" style="width: 100%;">
+                  <option value="APPROVE">🟢 教務處初審通過 (核定經費並准予外審)</option>
+                  <option value="REJECT">🔴 教務處退回 (退回系上重新修正)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: bold;">教務處管考審核意見：</label>
+                <input type="text" id="gate1-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate1.notes}">
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button class="btn btn-primary" id="btn-submit-gate1">送出教務處管考決策</button>
+              </div>
             </div>
-            <div>
-              <label style="font-size: 0.8rem; font-weight: bold;">考點審核意見 / 退回理由說明：</label>
-              <input type="text" id="gate1-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate1.notes}">
+          ` : `
+            <div class="read-only-notice">
+              🔒 <strong>管考權限提醒：</strong>您當前身分不是【教務處業務承辦人】。第一關管考權限歸屬於教務處課務註冊組，您僅能瀏覽當前管考紀錄。
             </div>
-            <div style="display: flex; align-items: flex-end;">
-              <button class="btn btn-primary" id="btn-submit-gate1">送出考點決策</button>
-            </div>
-          </div>
+          `}
         </div>
       `;
 
-      document.getElementById("btn-submit-gate1").addEventListener("click", () => {
-        const act = document.getElementById("gate1-action-select").value;
-        const notes = document.getElementById("gate1-notes-input").value;
-        if (act === "APPROVE") {
-          workflowState.gate1 = { status: "PASSED", reviewer: "課務註冊組", date: "115年09月22日", notes: notes };
-          workflowState.logs.unshift({ step: "考點1：系統初審", action: "🟢 初審通過送出", user: "課務組承辦人", time: new Date().toLocaleString(), comment: notes });
-          alert("【考點1 決策成功】第一階段初審通過！已准予送至第二階段校外專家審查。");
-        } else {
-          workflowState.gate1 = { status: "REJECTED", reviewer: "課務註冊組", date: "115年09月22日", notes: notes };
-          workflowState.logs.unshift({ step: "考點1：系統初審", action: "🔴 退回系所修正", user: "課務組承辦人", time: new Date().toLocaleString(), comment: notes });
-          alert("【考點1 決策成功】已退回系所修正！系統已紀錄退回理由並通知承辦單位。");
-        }
-        runAuditAndUpdateUI();
-      });
+      if (isAcademic) {
+        document.getElementById("btn-submit-gate1").addEventListener("click", () => {
+          const act = document.getElementById("gate1-action-select").value;
+          const notes = document.getElementById("gate1-notes-input").value;
+          if (act === "APPROVE") {
+            workflowState.gate1 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年09月22日", notes: notes };
+            workflowState.logs.unshift({ step: "第一關：計畫管考", action: "🟢 教務處核定通過", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
+            alert("【教務處管考成功】第一關初審通過！已核定經常門經費，並准予系上執行外審。");
+          } else {
+            workflowState.gate1 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年09月22日", notes: notes };
+            workflowState.logs.unshift({ step: "第一關：計畫管考", action: "🔴 教務處退回修正", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
+            alert("【教務處管考成功】已退回系上修正！");
+          }
+          runAuditAndUpdateUI();
+        });
+      }
     }
 
-    // 考點2 門檻 (專家審查)
+    // 考點 2：系上外審承辦人 & 專家
     const g2Box = document.getElementById("gate2-control-box");
     if (g2Box) {
+      const isDept = currentRole === "dept" || currentRole === "reviewer";
       g2Box.innerHTML = `
-        <div class="checkpoint-gate-card">
+        <div class="checkpoint-gate-card" style="border-color: #00a896;">
           <div class="gate-header">
-            <div class="gate-title">📌 考點 2：第二階段 校外專家審查考點 (專家委員依據檢核結果填寫附件8)</div>
+            <div class="gate-title">
+              📌 第二關執行考點：系上外審執行與專家審查意見
+              <span class="role-authority-badge" style="background: #00a896;">執行權限：系上外審承辦人 & 專家</span>
+            </div>
             <span class="badge ${workflowState.gate2.status === 'PASSED' ? 'badge-success' : 'badge-danger'}">
-              當前考點狀態：${workflowState.gate2.status === 'PASSED' ? '🟢 專家審查通過' : '🔴 建議退回修正'}
+              當前狀態：${workflowState.gate2.status === 'PASSED' ? '🟢 外審彙整完成' : '🔴 專家建議修正'}
             </span>
           </div>
-          <div class="gate-controls">
-            <div>
-              <label style="font-size: 0.8rem; font-weight: bold;">外審委員整體決策：</label>
-              <select id="gate2-action-select" class="form-select" style="width: 100%;">
-                <option value="APPROVE">🟢 審查通過 (附件8 勾選通過)</option>
-                <option value="REJECT">🔴 建議修正 (附件8 勾選建議修正)</option>
-              </select>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            由<strong>系上外審承辦人</strong>聯繫校外專家寄送資料，專家參照自動檢核結果填寫附件8意見表與附件9個資同意書後，系上彙整結果：
+          </p>
+          ${isDept ? `
+            <div class="gate-controls">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: bold;">外審審查與系上彙整決策：</label>
+                <select id="gate2-action-select" class="form-select" style="width: 100%;">
+                  <option value="APPROVE">🟢 外審審查通過 (彙整附件7/8/9完成)</option>
+                  <option value="REJECT">🔴 外審建議修正 (專家建議修訂或系上退回調整)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: bold;">外審專家意見 / 系上彙整說明：</label>
+                <input type="text" id="gate2-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate2.notes}">
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button class="btn btn-primary" id="btn-submit-gate2">送出外審彙整結果</button>
+              </div>
             </div>
-            <div>
-              <label style="font-size: 0.8rem; font-weight: bold;">專家質性意見與建議：</label>
-              <input type="text" id="gate2-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate2.notes}">
+          ` : `
+            <div class="read-only-notice">
+              🔒 <strong>權限提醒：</strong>第二關為專業系所外審承辦人與校外專家委員之執行權限。
             </div>
-            <div style="display: flex; align-items: flex-end;">
-              <button class="btn btn-primary" id="btn-submit-gate2">送出外審決策</button>
-            </div>
-          </div>
+          `}
         </div>
       `;
 
-      document.getElementById("btn-submit-gate2").addEventListener("click", () => {
-        const act = document.getElementById("gate2-action-select").value;
-        const notes = document.getElementById("gate2-notes-input").value;
-        if (act === "APPROVE") {
-          workflowState.gate2 = { status: "PASSED", reviewer: "張美珍 教授", date: "115年10月18日", notes: notes };
-          workflowState.logs.unshift({ step: "考點2：專家審查", action: "🟢 專家審查通過", user: "校外專家委員", time: new Date().toLocaleString(), comment: notes });
-          alert("【考點2 決策成功】校外專家審查通過！已核可進入第三階段系所成果報告與改善對照。");
-        } else {
-          workflowState.gate2 = { status: "REJECTED", reviewer: "王國華 副教授", date: "115年10月18日", notes: notes };
-          workflowState.logs.unshift({ step: "考點2：專家審查", action: "🔴 建議修正退回", user: "校外專家委員", time: new Date().toLocaleString(), comment: notes });
-          alert("【考點2 決策成功】專家建議修正！系所須於第三階段針對審查意見填寫因應措施。");
-        }
-        runAuditAndUpdateUI();
-      });
+      if (isDept) {
+        document.getElementById("btn-submit-gate2").addEventListener("click", () => {
+          const act = document.getElementById("gate2-action-select").value;
+          const notes = document.getElementById("gate2-notes-input").value;
+          if (act === "APPROVE") {
+            workflowState.gate2 = { status: "PASSED", reviewer: "系上承辦人 (張美珍 專家)", date: "115年10月18日", notes: notes };
+            workflowState.logs.unshift({ step: "第二關：專家外審", action: "🟢 專家審查通過", user: "系上承辦人 / 專家", time: new Date().toLocaleString(), comment: notes });
+            alert("【系上外審執行成功】已完成外審意見與個資同意書彙整！已准予進入第三階段上傳成果報告。");
+          } else {
+            workflowState.gate2 = { status: "REJECTED", reviewer: "系上承辦人 (王國華 專家)", date: "115年10月18日", notes: notes };
+            workflowState.logs.unshift({ step: "第二關：專家外審", action: "🔴 專家建議修正", user: "系上承辦人 / 專家", time: new Date().toLocaleString(), comment: notes });
+            alert("【外審意見紀錄成功】專家建議修正，已拋轉至第三階段由系上填寫改善因應措施。");
+          }
+          runAuditAndUpdateUI();
+        });
+      }
     }
 
-    // 考點3 最終核章門檻
+    // 考點 3：教務處業務承辦人 (最後一關)
     const g3Box = document.getElementById("gate3-control-box");
     if (g3Box) {
+      const isAcademic = currentRole === "academic";
       g3Box.innerHTML = `
-        <div class="checkpoint-gate-card">
+        <div class="checkpoint-gate-card" style="border-color: #e63946;">
           <div class="gate-header">
-            <div class="gate-title">📌 考點 3：第三階段 教務處/院級最終簽核考點 (附件10成果報告與改善對照核章)</div>
+            <div class="gate-title">
+              📌 最後一關管考考點：教務處成果報告審核與經費核銷結案
+              <span class="role-authority-badge" style="background: #e63946;">最後一關管考權限：教務處業務承辦人</span>
+            </div>
             <span class="badge ${workflowState.gate3.status === 'PASSED' ? 'badge-success' : 'badge-danger'}">
-              當前考點狀態：${workflowState.gate3.status === 'PASSED' ? '🟢 最終審核通過結案' : '🔴 需退回重新改善'}
+              當前狀態：${workflowState.gate3.status === 'PASSED' ? '🟢 教務處管考結案核銷' : '🔴 退回系上重新修正'}
             </span>
           </div>
-          <div class="gate-controls">
-            <div>
-              <label style="font-size: 0.8rem; font-weight: bold;">最終簽核決策：</label>
-              <select id="gate3-action-select" class="form-select" style="width: 100%;">
-                <option value="APPROVE">🟢 最終核章通過 (准予核銷結案)</option>
-                <option value="REJECT">🔴 退回系所重新修正改善措施</option>
-              </select>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            系上送交附件10成果報告書與外審改善對照表後，由<strong>最後一關教務處業務承辦人</strong>進行管考審核與經費核銷：
+          </p>
+          ${isAcademic ? `
+            <div class="gate-controls">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: bold;">教務處最後一關管考決策：</label>
+                <select id="gate3-action-select" class="form-select" style="width: 100%;">
+                  <option value="APPROVE">🟢 教務處管考通過 (完成簽核與經常門核銷結案)</option>
+                  <option value="REJECT">🔴 教務處退回 (退回系上重新修正改善對照表)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: bold;">教務處管考簽核意見：</label>
+                <input type="text" id="gate3-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate3.notes}">
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button class="btn btn-success" id="btn-submit-gate3">完成教務處最後一關管考結案</button>
+              </div>
             </div>
-            <div>
-              <label style="font-size: 0.8rem; font-weight: bold;">最終核章簽署意見：</label>
-              <input type="text" id="gate3-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate3.notes}">
+          ` : `
+            <div class="read-only-notice">
+              🔒 <strong>管考權限提醒：</strong>最後一關成果報告核銷與結案管考權限歸屬於【教務處業務承辦人】。請切換至教務處承辦人身分進行最後一關管考簽核。
             </div>
-            <div style="display: flex; align-items: flex-end;">
-              <button class="btn btn-success" id="btn-submit-gate3">完成最終簽核</button>
-            </div>
-          </div>
+          `}
         </div>
       `;
 
-      document.getElementById("btn-submit-gate3").addEventListener("click", () => {
-        const act = document.getElementById("gate3-action-select").value;
-        const notes = document.getElementById("gate3-notes-input").value;
-        if (act === "APPROVE") {
-          workflowState.gate3 = { status: "PASSED", reviewer: "教務長", date: "115年11月08日", notes: notes };
-          workflowState.logs.unshift({ step: "考點3：最終簽核", action: "🟢 最終結案核可", user: "教務長", time: new Date().toLocaleString(), comment: notes });
-          alert("🎉【考點3 決策成功】全套課程結構外審流程已完成最終簽核與核銷結案！");
-        } else {
-          workflowState.gate3 = { status: "REJECTED", reviewer: "教務長", date: "115年11月08日", notes: notes };
-          workflowState.logs.unshift({ step: "考點3：最終簽核", action: "🔴 退回改善措施", user: "教務長", time: new Date().toLocaleString(), comment: notes });
-          alert("【考點3 決策成功】已退回系所要求重新編修改善措施。");
-        }
-        runAuditAndUpdateUI();
-      });
+      if (isAcademic) {
+        document.getElementById("btn-submit-gate3").addEventListener("click", () => {
+          const act = document.getElementById("gate3-action-select").value;
+          const notes = document.getElementById("gate3-notes-input").value;
+          if (act === "APPROVE") {
+            workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月08日", notes: notes };
+            workflowState.logs.unshift({ step: "最後一關：成果與核銷", action: "🟢 教務處核銷結案", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
+            alert("🎉【教務處最後一關管考成功】成果報告與改善對照表核章無誤，完成經費核銷與結案！");
+          } else {
+            workflowState.gate3 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年11月08日", notes: notes };
+            workflowState.logs.unshift({ step: "最後一關：成果與核銷", action: "🔴 教務處退回修正", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
+            alert("【教務處管考退回成功】已退回系上要求重新修訂附件10改善措施。");
+          }
+          runAuditAndUpdateUI();
+        });
+      }
     }
   }
 
-  // 渲染審核履歷與考點歷史 Trace Log
+  // 審核履歷
   function renderApprovalHistoryLogs() {
     const tbody = document.getElementById("tbody-approval-logs");
     if (!tbody) return;
-
     tbody.innerHTML = workflowState.logs.map((log, idx) => `
       <tr>
         <td>#${workflowState.logs.length - idx}</td>
@@ -335,7 +390,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
-  // 渲染條文與跨表檢核視圖 (其餘同前)
   function renderRuleAuditTable(rules) {
     const tbody = document.getElementById("tbody-rule-audit");
     if (!tbody) return;
@@ -639,9 +693,6 @@ document.addEventListener("DOMContentLoaded", () => {
               <td><span class="badge badge-warning">📄 ${att9.uploadedScanFile}</span></td>
             </tr>
           </table>
-        </div>
-        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="alert('重新上傳個資同意書簽署檔：上傳成功！')">📤 重新上傳個資同意書檔</button>
         </div>
       </div>
     `;

@@ -1,4 +1,4 @@
-/* 輔英科技大學「課程結構外審」自動檢核系統 - 樣式表 (含三階段流程與人工考點) */
+/* 輔英科技大學「課程結構外審」自動檢核系統 - 樣式表 (含管考權限與身分切換) */
 :root {
   --primary-color: #005691;
   --primary-hover: #00406c;
@@ -59,7 +59,42 @@ body {
 }
 .brand-title h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
 .brand-title p { font-size: 0.85rem; opacity: 0.85; }
-.header-actions { display: flex; gap: 0.75rem; }
+
+/* Role Switcher Bar */
+.role-bar {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #fff;
+  padding: 0.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.role-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.role-pill {
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.1);
+  color: #cbd5e1;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.role-pill:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.role-pill.active { background: var(--secondary-color); color: #fff; border-color: #fff; }
 
 /* 3-Stage Progress Step Bar */
 .workflow-steps-bar {
@@ -74,46 +109,23 @@ body {
 }
 
 .step-pill {
-  flex: 1;
-  background: #f1f5f9;
-  border-radius: var(--radius-md);
-  padding: 0.85rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  border: 2px solid transparent;
-  transition: all 0.25s ease;
-  position: relative;
+  flex: 1; background: #f1f5f9; border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem; display: flex; align-items: center;
+  gap: 0.85rem; border: 2px solid transparent; transition: all 0.25s ease;
 }
-
-.step-pill.active {
-  background: #ffffff;
-  border-color: var(--primary-color);
-  box-shadow: var(--shadow-md);
-}
-
-.step-pill.passed {
-  border-color: var(--success-color);
-  background: rgba(16, 185, 129, 0.04);
-}
-
-.step-pill.rejected {
-  border-color: var(--danger-color);
-  background: rgba(230, 57, 70, 0.04);
-}
+.step-pill.active { background: #ffffff; border-color: var(--primary-color); box-shadow: var(--shadow-md); }
+.step-pill.passed { border-color: var(--success-color); background: rgba(16, 185, 129, 0.04); }
+.step-pill.rejected { border-color: var(--danger-color); background: rgba(230, 57, 70, 0.04); }
 
 .step-num {
   width: 32px; height: 32px; border-radius: 50%;
-  background: var(--text-muted); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  background: var(--text-muted); color: #fff; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
 }
-
 .step-pill.active .step-num { background: var(--primary-color); }
 .step-pill.passed .step-num { background: var(--success-color); }
 .step-pill.rejected .step-num { background: var(--danger-color); }
 
-.step-info-text { display: flex; flex-direction: column; }
 .step-info-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
 .step-info-sub { font-size: 0.8rem; color: var(--text-muted); }
 
@@ -145,6 +157,15 @@ body {
   gap: 0.5rem;
 }
 
+.role-authority-badge {
+  background: #0284c7;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
 .gate-controls {
   display: grid;
   grid-template-columns: 1fr 2fr auto;
@@ -154,6 +175,16 @@ body {
   padding: 1.25rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
+}
+
+.read-only-notice {
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  color: #b45309;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
 }
 
 /* Buttons */
@@ -281,7 +312,7 @@ body {
 .att5-check-box { display: inline-block; font-weight: bold; margin-right: 0.5rem; }
 .att5-footer { margin-top: 1.5rem; display: flex; justify-content: space-between; font-weight: bold; }
 
-/* Filter Controls */
+/* Form Controls */
 .form-select, .form-input {
   padding: 0.55rem 0.8rem; border: 1px solid var(--border-color);
   border-radius: var(--radius-sm); font-size: 0.9rem; outline: none;

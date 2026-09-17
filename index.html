@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>輔英科技大學「課程結構外審」三階段邏輯與人工考點審核系統</title>
+  <title>輔英科技大學「課程結構外審」全流程自動檢核與管考權限系統</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,8 +13,8 @@
     <div class="brand-container">
       <div class="brand-logo">FY</div>
       <div class="brand-title">
-        <h1>輔英科技大學「課程結構外審」全流程自動檢核與考點審核系統</h1>
-        <p>三階段核心邏輯：系統自動檢核(附件1~4) ➔ 專家外審檢核(附件7,9,8) ➔ 系所改善與成果(附件10)</p>
+        <h1>輔英科技大學「課程結構外審」全流程自動檢核系統</h1>
+        <p>管考權限區分：第一關(教務處初審) ➔ 第二關(系上執行外審) ➔ 最後一關(教務處核銷結案)</p>
       </div>
     </div>
     <div class="header-actions">
@@ -23,6 +23,19 @@
     </div>
   </header>
 
+  <!-- 登入身分與管考權限切換 Bar -->
+  <div class="role-bar no-print">
+    <div class="role-selector-group">
+      <span style="font-weight: bold; color: #f8fafc;">🔑 選擇當前操作身分 (權限模擬)：</span>
+      <div class="role-pill active" data-role="academic">🏢 教務處業務承辦人 (管考權限：第一關與最後一關)</div>
+      <div class="role-pill" data-role="dept">🏫 專業系所外審承辦人 (執行權限：外審聯繫與成果填報)</div>
+      <div class="role-pill" data-role="reviewer">🎓 校外外審專家委員 (審查權限：附件8與個資同意)</div>
+    </div>
+    <div id="current-role-display">
+      <!-- 由 JS 動態顯示當前身分權限提示 -->
+    </div>
+  </div>
+
   <!-- 3 階段進度條 Bar -->
   <div id="workflow-steps-container" class="workflow-steps-bar no-print">
     <!-- 由 JS 動態渲染 Step Pill -->
@@ -30,41 +43,39 @@
 
   <div class="container">
     
-    <!-- 主導覽分頁 Tabs (依據系統 3 大部分邏輯設計) -->
+    <!-- 主導覽分頁 Tabs -->
     <nav class="nav-tabs no-print">
-      <div class="tab-item active" data-tab="tab-part1">🔹 第一部分：系統自動檢核 (附件1~4 & 附件5)</div>
-      <div class="tab-item" data-tab="tab-part2">🔹 第二部分：專家外審審查 (附件7,9 & 附件8)</div>
-      <div class="tab-item" data-tab="tab-part3">🔹 第三部分：系所成果與改善 (附件10報告與對照)</div>
+      <div class="tab-item active" data-tab="tab-part1">🔹 第一關：教務處初審管考 (附件1~4 & 附件5)</div>
+      <div class="tab-item" data-tab="tab-part2">🔹 第二關：系上外審與專家審查 (附件7,9 & 附件8)</div>
+      <div class="tab-item" data-tab="tab-part3">🔹 最後一關：教務處核銷結案 (附件10成果與改善)</div>
       <div class="tab-item" data-tab="tab-history">📜 考點審核歷史與對照履歷</div>
       <div class="tab-item" data-tab="tab-courses">📚 科目表線上檢視 (附件2)</div>
     </nav>
 
-    <!-- 第一部分：系統自動檢核階段 (附件1~4帶入, 自動檢核矩陣, 考點1門檻) -->
+    <!-- 第一關：教務處初審管考 (權限：教務處業務承辦人) -->
     <section id="tab-part1" class="tab-content active">
       
       <!-- 快速載入示範資料列 -->
       <div class="preset-bar">
         <div class="preset-info">
           <h3>⚡ 示範資料組一鍵快捷載入</h3>
-          <p>選擇預設的系所課程結構資料組，測試【合格通過】與【不合格退回】考點邏輯：</p>
+          <p>選擇預設的系所課程結構資料組，測試【合格通過】與【不合格退回】管考考點：</p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
           <select id="preset-select" class="form-select" style="min-width: 320px;">
-            <option value="4nursing">115學年度 四年制日間部 護理系 (考點合格通過範例)</option>
-            <option value="2elderly">115學年度 二年制日間部 高齡照護系 (考點不合格退回範例)</option>
+            <option value="4nursing">115學年度 四年制日間部 護理系 (初審合格範例)</option>
+            <option value="2elderly">115學年度 二年制日間部 高齡照護系 (初審退回範例)</option>
           </select>
           <button class="btn btn-primary" id="btn-load-preset">載入此預設資料組</button>
         </div>
       </div>
 
-      <!-- 📌 考點 1 人工審核門檻模組 -->
-      <div id="gate1-control-box" class="no-print">
-        <!-- 由 JS 渲染 考點1 卡片與退回/送出按鈕 -->
-      </div>
+      <!-- 📌 第一關管考考點 (權限：教務處業務承辦人) -->
+      <div id="gate1-control-box" class="no-print"></div>
 
-      <!-- 附件1~4 獨立帶入 Slots -->
+      <!-- 附件1~4 Slots -->
       <div class="section-title">
-        <span>📁 第一部分 檢附文件帶入區塊 (附件1 ~ 附件4)</span>
+        <span>📁 第一關 檢附文件帶入區塊 (附件1 ~ 附件4)</span>
       </div>
       <div class="slots-grid">
         <div class="slot-card" id="slot1">
@@ -128,9 +139,9 @@
         </div>
       </div>
 
-      <!-- 條文自動檢核矩陣 (產出附件5依據) -->
+      <!-- 條文自動檢核矩陣 -->
       <div class="section-title">
-        <span>📋 附件1~4 條文與要點自動檢核矩陣</span>
+        <span>📋 附件1~4 條文與要點自動檢核矩陣 (教務處初審依據)</span>
       </div>
       <div class="table-responsive">
         <table class="data-table">
@@ -166,24 +177,22 @@
         </table>
       </div>
 
-      <!-- 附件5 標準報表預覽區 -->
+      <!-- 附件5 標準報表 -->
       <div class="section-title" style="margin-top: 2rem;">
         <span>📑 產出 附件5 科目表檢核表</span>
       </div>
       <div id="att5-report-view"></div>
     </section>
 
-    <!-- 第二部分：專家外審審查階段 (附件7, 9 & 附件8, 考點2門檻) -->
+    <!-- 第二關：系上外審與專家審查 (權限：專業系所承辦人 & 校外專家) -->
     <section id="tab-part2" class="tab-content">
       
-      <!-- 📌 考點 2 外審專家決策門檻 -->
-      <div id="gate2-control-box" class="no-print">
-        <!-- 由 JS 渲染 考點2 卡片 -->
-      </div>
+      <!-- 📌 第二關執行考點 (權限：系上外審承辦人 & 專家) -->
+      <div id="gate2-control-box" class="no-print"></div>
 
       <!-- 附件7 & 附件9 Slots -->
       <div class="section-title">
-        <span>📁 第二部分 檢附文件與委員回傳區 (附件7 & 附件9)</span>
+        <span>📁 第二關 檢附文件與委員回傳區 (附件7 & 附件9)</span>
       </div>
       <div class="slots-grid">
         <div class="slot-card" id="slot7">
@@ -215,17 +224,15 @@
       <div id="att8-report-view"></div>
     </section>
 
-    <!-- 第三部分：系所成果與改善對照階段 (附件10報告與對照, 考點3門檻) -->
+    <!-- 最後一關：教務處核銷結案 (權限：教務處業務承辦人) -->
     <section id="tab-part3" class="tab-content">
       
-      <!-- 📌 考點 3 最終簽核門檻 -->
-      <div id="gate3-control-box" class="no-print">
-        <!-- 由 JS 渲染 考點3 卡片 -->
-      </div>
+      <!-- 📌 最後一關管考考點 (權限：教務處業務承辦人) -->
+      <div id="gate3-control-box" class="no-print"></div>
 
       <!-- 附件10 Slot -->
       <div class="section-title">
-        <span>📁 第三部分 專業系所成果與改善對照上傳 (附件10)</span>
+        <span>📁 第三階段 專業系所成果與改善對照上傳 (附件10)</span>
       </div>
       <div class="slots-grid">
         <div class="slot-card" id="slot10" style="max-width: 400px;">
@@ -240,7 +247,7 @@
 
       <!-- 附件10 成果報告與改善對照表 -->
       <div class="section-title" style="margin-top: 2rem;">
-        <span>📈 附件10：成果報告書與外審意見改善追蹤對照表</span>
+        <span>📈 附件10：成果報告書與外審意見改善追蹤對照表 (教務處最後核銷依據)</span>
       </div>
       <div id="att10-report-view"></div>
     </section>
@@ -248,18 +255,18 @@
     <!-- 考點審核歷史與對照履歷 -->
     <section id="tab-history" class="tab-content">
       <div class="section-title">
-        <span>📜 全流程 3 大人工審核考點 (Decision Gates) 歷史簽核履歷</span>
+        <span>📜 全流程管考權限考點歷史簽核履歷</span>
       </div>
       <div class="table-responsive">
         <table class="data-table">
           <thead>
             <tr>
               <th style="width: 8%;">序號</th>
-              <th style="width: 18%;">考點階段</th>
+              <th style="width: 18%;">管考考點階段</th>
               <th style="width: 16%;">審核決策</th>
-              <th style="width: 14%;">審核人員/單位</th>
-              <th style="width: 16%;">審核時間</th>
-              <th style="width: 28%;">考點審核意見與退回說明</th>
+              <th style="width: 16%;">審核權限人員/單位</th>
+              <th style="width: 14%;">審核時間</th>
+              <th style="width: 28%;">管考審核意見與退回說明</th>
             </tr>
           </thead>
           <tbody id="tbody-approval-logs"></tbody>
