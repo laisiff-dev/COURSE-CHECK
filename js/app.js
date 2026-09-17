@@ -1749,4 +1749,17 @@ ${att8.qualitativeComments || '無特別質性意見。'}
       loadDataset();
     };
   }
+
+  // 綁定全域 window 物件以確保所有內聯 onclick / HTML 標籤均可 100% 呼叫執行
+  window.openAttachment1Modal = openAttachment1Modal;
+  window.openAttachment2Modal = openAttachment2Modal;
+  window.openAttachment3Modal = openAttachment3Modal;
+  window.openAttachment4Modal = openAttachment4Modal;
+  window.openGlobalFileUploadHubModal = openGlobalFileUploadHubModal;
+  window.openPaperScanModal = openPaperScanModal;
+  window.openUploadConfirmationModal = openUploadConfirmationModal;
+  window.triggerSlotFileInput = function(num) {
+    const el = document.getElementById(`slot${num}-file-input`);
+    if (el) el.click();
+  };
 });
