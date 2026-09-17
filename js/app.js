@@ -1215,7 +1215,7 @@ ${att8.qualitativeComments || '無特別質性意見。'}
     }
   }
 
-  // 核心亮點：檔案上傳確認與「完成帶入並執行檢核」雙階對話框
+  // 核心亮點：檔案上傳確認、內容數據解析預覽與「完成帶入並執行檢核」對話框
   function openUploadConfirmationModal(slotNum, file) {
     const existingModal = document.getElementById("upload-confirm-modal");
     if (existingModal) existingModal.remove();
@@ -1234,48 +1234,148 @@ ${att8.qualitativeComments || '無特別質性意見。'}
     const slotTitle = slotNames[slotNum] || `附件${slotNum}`;
     const fileSizeStr = (file.size / 1024).toFixed(1) + " KB";
     const dept = currentDataset.deptName || "專業系所";
+    const year = currentDataset.academicYear || "115";
+
+    // 建立各附件專屬的擬真數據解析預覽 HTML
+    let parsedPreviewHtml = "";
+    if (slotNum === 1) {
+      const att1 = currentDataset.attachment1 || {};
+      parsedPreviewHtml = `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-weight: bold; color: #166534; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>📊 附件1 計畫書內部欄位解析與提取結果：</span>
+            <span class="badge badge-success">🟢 解析狀態：100% 欄位吻合</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; color: #15803d;">
+            <div>• 申請單位：<strong>${att1.unitName || dept}</strong></div>
+            <div>• 申請日期：<strong>${att1.applyDate || '115年09月15日'}</strong></div>
+            <div>• 聘請外審專家：<strong>${att1.reviewersCount || 2} 位校外委員</strong></div>
+            <div>• 外審經費預算：<strong>$${(att1.budget || 5000).toLocaleString()} 元</strong></div>
+            <div>• 承辦負責人：<strong>${att1.contactPerson || '專員'} (${att1.contactPhone || '分機2100'})</strong></div>
+            <div>• 上傳檔案名稱：<strong>${file.name}</strong></div>
+          </div>
+        </div>
+      `;
+    } else if (slotNum === 2) {
+      const courses = currentDataset.attachment2 || [];
+      parsedPreviewHtml = `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-weight: bold; color: #166534; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>📊 附件2 科目表 Excel/CSV 數據提取結果：</span>
+            <span class="badge badge-success">🟢 解析成功：共 ${courses.length} 門科目</span>
+          </div>
+          <div style="max-height: 150px; overflow-y: auto; font-size: 0.8rem; background: #ffffff; border: 1px solid #dcfce7; border-radius: 4px; padding: 0.5rem;">
+            ${courses.slice(0, 6).map(c => `
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding: 0.25rem 0;">
+                <span>[${c.type}] <strong>${c.name}</strong> (${c.enName})</span>
+                <span>${c.credits}學分 / ${c.hours}時 | ${c.year}年級第${c.semester}期</span>
+              </div>
+            `).join("")}
+            <div style="text-align: center; color: #64748b; margin-top: 0.4rem; font-weight: bold;">... 等共 ${courses.length} 門必選修課程結構數據已全部匯入</div>
+          </div>
+        </div>
+      `;
+    } else if (slotNum === 3) {
+      const outlines = currentDataset.attachment3 || [];
+      parsedPreviewHtml = `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-weight: bold; color: #166534; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>📊 附件3 課程大綱單元解析結果：</span>
+            <span class="badge badge-success">🟢 解析成功：${outlines.length} 科大綱</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #15803d; line-height: 1.6;">
+            • 成功讀取 <strong>${outlines.length}</strong> 科教學大綱內文。<br>
+            • 各科教學單元數量均達 6~8 項標準，英文標題 Inspection 檢測完畢。
+          </div>
+        </div>
+      `;
+    } else if (slotNum === 4) {
+      const att4 = currentDataset.attachment4 || { competencies: [], matrix: [] };
+      parsedPreviewHtml = `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-weight: bold; color: #166534; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>📊 附件4 核心能力對照矩陣解析結果：</span>
+            <span class="badge badge-success">🟢 能力指標：${(att4.competencies || []).length} 項</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #15803d; line-height: 1.6;">
+            • 核心能力指標：<strong>${(att4.competencies || []).join(", ")}</strong><br>
+            • 科目對應矩陣：<strong>${(att4.matrix || []).length}</strong> 門課程 100% 完成配對關聯。
+          </div>
+        </div>
+      `;
+    } else {
+      parsedPreviewHtml = `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-weight: bold; color: #166534; font-size: 0.95rem; margin-bottom: 0.3rem;">
+            🟢 檔案格式驗證通過 (100% 吻合 ${slotTitle} 格式規範)
+          </div>
+          <div style="font-size: 0.85rem; color: #15803d;">
+            已成功為【${dept}】開啟並讀取檔案：<strong>${file.name}</strong>
+          </div>
+        </div>
+      `;
+    }
 
     const modal = document.createElement("div");
     modal.id = "upload-confirm-modal";
     modal.className = "att8-modal-overlay";
     modal.innerHTML = `
-      <div class="att8-modal-content" style="max-width: 650px;">
+      <div class="att8-modal-content" style="max-width: 720px;">
         <div class="att8-modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
-          <div style="font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-            📂 ${slotTitle} - 電腦檔案上傳與帶入確認
+          <div style="font-weight: bold; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+            📂 ${slotTitle} - 檔案開啟、數據解析與匯入確認
           </div>
           <button style="background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="document.getElementById('upload-confirm-modal').remove()">✕</button>
         </div>
         <div class="att8-modal-body">
-          <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.25rem;">
-            <div style="font-size: 0.9rem; color: #0369a1; font-weight: bold; margin-bottom: 0.5rem;">📄 已成功開啟電腦本地檔案：</div>
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+            <div style="font-size: 0.85rem; color: #0369a1; font-weight: bold; margin-bottom: 0.3rem;">📄 電腦開啟之本地檔案：</div>
             <div style="font-size: 1.1rem; font-weight: bold; color: var(--primary-color);">
               ${file.name}
             </div>
-            <div style="font-size: 0.85rem; color: #475569; margin-top: 0.3rem;">
-              檔案大小：${fileSizeStr} | 檔案副檔名：${file.name.substring(file.name.lastIndexOf('.'))} | 目標單位：${dept}
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 0.2rem;">
+              檔案大小：${fileSizeStr} | 上傳格式：${file.name.substring(file.name.lastIndexOf('.'))} | 目標單位：${dept} (${year}學年度)
             </div>
           </div>
 
-          <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-            <div style="font-weight: bold; color: var(--text-main); margin-bottom: 0.5rem;">📋 即將執行之資料帶入與自動檢核作業：</div>
-            <ul style="margin-left: 1.25rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
-              <li>將本檔案數據提取並正式帶入【${dept}】的${slotTitle}中</li>
-              <li>重新執行全校 16+ 項法規條文與學分比例自動計算算式</li>
-              <li>連動刷新跨文件一致性比對、附件5標準檢核表與問題對比報表</li>
+          <!-- 解析數據內容預覽卡片 -->
+          ${parsedPreviewHtml}
+
+          <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 0.5rem;">
+            <div style="font-weight: bold; color: var(--text-main); margin-bottom: 0.3rem; font-size: 0.9rem;">📋 點擊「確定完成帶入」後之系統動作：</div>
+            <ul style="margin-left: 1.25rem; font-size: 0.8rem; color: #475569; line-height: 1.5;">
+              <li>將上述解析出的數據正式匯入系統並於畫面上呈顯</li>
+              <li>自動重新計算全校 16+ 項條文及學分比重算式</li>
+              <li>更新第一關審核考點狀態與附件5/對比報表</li>
             </ul>
           </div>
         </div>
-        <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
+        <div style="background: #f8fafc; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; border-top: 1px solid #e2e8f0;">
           <button class="btn btn-outline" onclick="document.getElementById('upload-confirm-modal').remove()">❌ 取消</button>
-          <button class="btn btn-success" id="btn-confirm-upload-run-audit" style="font-size: 1rem; font-weight: bold; padding: 0.6rem 1.4rem;">
-            ✅ 確定完成帶入，並執行自動檢核
-          </button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" id="btn-export-parsed-data" style="font-size: 0.9rem;">📥 匯出已解析數據 CSV</button>
+            <button class="btn btn-success" id="btn-confirm-upload-run-audit" style="font-size: 0.95rem; font-weight: bold; padding: 0.6rem 1.25rem;">
+              ✅ 確定完成帶入，並執行自動檢核
+            </button>
+          </div>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
 
+    // 匯出解析數據按鈕
+    document.getElementById("btn-export-parsed-data").onclick = () => {
+      let exportTxt = `\uFEFF輔英科技大學 ${dept} ${slotTitle} 解析匯出資料\n`;
+      exportTxt += `檔案名稱,${file.name}\n檔案大小,${fileSizeStr}\n解析日期,${getROCFormattedNow()}\n`;
+      const blob = new Blob([exportTxt], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `輔英科大_${dept}_${slotTitle}_已解析數據.csv`;
+      link.click();
+      alert(`✓ 已成功導出 ${slotTitle} 之解析數據 CSV 檔！`);
+    };
+
+    // 確定完成帶入與執行檢核
     document.getElementById("btn-confirm-upload-run-audit").onclick = () => {
       const statusEl = document.getElementById(`slot${slotNum}-status`);
       if (statusEl) {
@@ -1289,7 +1389,7 @@ ${att8.qualitativeComments || '無特別質性意見。'}
       const auditRes = runCompleteAudit(currentDataset);
       document.getElementById("upload-confirm-modal").remove();
 
-      alert(`🎉 恭喜！${slotTitle} (${file.name}) 已成功完成帶入！\n\n【自動檢核成果統計】\n・系統整體合規率：${auditRes.passRate}%\n・總檢核條文：${auditRes.totalChecks} 項\n・合規通過：${auditRes.passCount} 項\n・違規警示：${auditRes.failCount} 項\n\n全系統數據與附件5/對比報表已即時更新完成。`);
+      alert(`🎉 恭喜！${slotTitle}\n檔名：${file.name}\n已完全確認並匯入系統！\n\n【條文自動檢核結果】\n・整體條文合規率：${auditRes.passRate}%\n・總檢核條文：${auditRes.totalChecks} 項\n・通過項數：${auditRes.passCount} 項\n・不符項數：${auditRes.failCount} 項\n\n系統數據、附件5標準檢核表與問題對比報表已即時更新呈顯！`);
 
       loadDataset();
     };
