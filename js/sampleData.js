@@ -1,14 +1,60 @@
-/* 輔英科技大學「課程結構外審」自動檢核系統 - 預設示範資料庫 (含附件1~10完整流程檔) */
+/* 輔英科技大學「課程結構外審」自動檢核系統 - 學院系所對照與預設資料庫 */
+
+// 輔英科技大學現有學院與系所完整架構
+window.FooyinColleges = [
+  {
+    collegeName: "護理學院",
+    depts: [
+      { id: "nursing", name: "護理系", sysDegrees: ["日四技", "日二技", "碩士班", "學士後護理系"] },
+      { id: "elderly", name: "高齡照護健康管理系", sysDegrees: ["日四技", "日二技"] }
+    ]
+  },
+  {
+    collegeName: "醫學與健康學院",
+    depts: [
+      { id: "medlab", name: "醫學檢驗生物技術系", sysDegrees: ["日四技", "碩士班"] },
+      { id: "pt", name: "物理治療系", sysDegrees: ["日四技"] },
+      { id: "nutrition", name: "保健營養系", sysDegrees: ["日四技", "碩士班"] },
+      { id: "rad", name: "醫學影像暨放射科學系", sysDegrees: ["日四技"] }
+    ]
+  },
+  {
+    collegeName: "環境與生命學院",
+    depts: [
+      { id: "osh", name: "職業安全衛生系", sysDegrees: ["日四技", "碩士班"] },
+      { id: "env", name: "環境工程衛生系", sysDegrees: ["日四技"] },
+      { id: "chem", name: "應用化學系", sysDegrees: ["日四技"] },
+      { id: "biotech", name: "生物科技系", sysDegrees: ["日四技"] }
+    ]
+  },
+  {
+    collegeName: "人文與管理學院",
+    depts: [
+      { id: "child", name: "幼兒保育系", sysDegrees: ["日四技", "日二技"] },
+      { id: "im", name: "資訊管理系", sysDegrees: ["日四技", "五專"] },
+      { id: "hbm", name: "健康事業管理系", sysDegrees: ["日四技", "碩士班"] },
+      { id: "leisure", name: "休閒與遊憩事業管理系", sysDegrees: ["日四技"] },
+      { id: "fl", name: "應用外語系", sysDegrees: ["日四技"] }
+    ]
+  },
+  {
+    collegeName: "共同教育中心",
+    depts: [
+      { id: "ge", name: "通識教育中心", sysDegrees: ["全校各學制"] }
+    ]
+  }
+];
+
 window.SampleDataPresets = {
   "4nursing": {
-    name: "115學年度 四年制日間部 護理系（標準符合與全流程範例）",
-    systemType: "日四技",
+    name: "115學年度 護理學院 護理系【四年制日間部】(標準符合與對比報表範例)",
+    collegeName: "護理學院",
     deptName: "護理系",
+    systemType: "日四技",
     academicYear: "115",
     totalGenCreditsRequired: 32,
     totalProfCreditsRequired: 96,
     
-    // 附件1: 計畫申請書
     attachment1: {
       unitName: "護理系",
       applyDate: "115年09月15日",
@@ -19,7 +65,6 @@ window.SampleDataPresets = {
       contactPhone: "07-7811151#2100"
     },
     
-    // 附件2: 科目表
     attachment2: [
       { id: 1, type: "通識必修", code: "GE101", name: "國文與閱讀", enName: "Chinese and Reading", credits: 2, hours: 2, labHours: 0, year: 1, semester: 1, attr: ["基礎通識"] },
       { id: 2, type: "通識必修", code: "GE102", name: "實用英文", enName: "Practical English", credits: 2, hours: 2, labHours: 0, year: 1, semester: 1, attr: ["基礎通識", "職場英文"] },
@@ -44,7 +89,6 @@ window.SampleDataPresets = {
       { id: 25, type: "專業選修", code: "NU-E06", name: "臨床情境模擬演練", enName: "Clinical Scenario Simulation Practice", credits: 3, hours: 2, labHours: 2, year: 3, semester: 1, attr: ["專業選修", "健康主軸"] }
     ],
     
-    // 附件3: 課程概述與大綱資料表
     attachment3: [
       {
         courseName: "智慧醫療與數位科技護理應用",
@@ -78,30 +122,21 @@ window.SampleDataPresets = {
       }
     ],
     
-    // 附件4: 課程設計與核心能力關聯表
     attachment4: {
       competencies: ["A. 基礎生醫科學", "B. 護理技能與評估", "C. 溝通與團隊合作", "D. 批判性思考", "E. 倫理與關懷素養", "F. 終身學習與科技應用"],
       matrix: [
         { courseName: "國文與閱讀", compScores: [0, 0, 1, 0, 1, 1] },
-        { courseName: "實用英文", compScores: [0, 0, 1, 0, 0, 1] },
-        { courseName: "程式設計與邏輯思維", compScores: [0, 0, 0, 1, 0, 1] },
         { courseName: "解剖生理學", compScores: [1, 1, 0, 1, 0, 0] },
         { courseName: "基本護理學與實驗", compScores: [1, 1, 1, 1, 1, 0] },
-        { courseName: "護理倫理與職場專業規範", compScores: [0, 0, 1, 1, 1, 0] },
-        { courseName: "專業職場英文術語", compScores: [0, 1, 1, 0, 0, 1] },
-        { courseName: "智慧醫療與數位科技護理應用", compScores: [0, 1, 0, 1, 0, 1] },
-        { courseName: "護理實務專題製作", compScores: [0, 1, 1, 1, 1, 1] },
-        { courseName: "臨床學期護理實習", compScores: [1, 1, 1, 1, 1, 1] }
+        { courseName: "護理倫理與職場專業規範", compScores: [0, 0, 1, 1, 1, 0] }
       ]
     },
     
-    // 附件7: 校外專家簡歷
     attachment7: [
       { name: "張美珍", title: "教授兼副院長", org: "國立成功大學醫學院護理學系", field: "臨床護理、護理教育" },
       { name: "陳建宏", title: "主任委員", org: "高雄榮民總醫院護理部", field: "醫療品質管理、護理倫理" }
     ],
 
-    // 附件8: 課程結構審查意見表 (校外委員線上審查填寫)
     attachment8: {
       reviewDate: "115年10月15日",
       reviewType: "外審",
@@ -111,18 +146,13 @@ window.SampleDataPresets = {
       quantitativeScores: [
         { itemCategory: "培育目標", itemName: "1. 培育具備關懷與專業倫理之臨床護理人才", score: "極高" },
         { itemCategory: "培育目標", itemName: "2. 強化學生數位科技與智慧醫療之應用能力", score: "極高" },
-        { itemCategory: "培育目標", itemName: "3. 促進跨域學習與國際護理視野", score: "高" },
-        { itemCategory: "核心能力", itemName: "A. 基礎生醫科學與護理技術能力", score: "極高" },
-        { itemCategory: "核心能力", itemName: "B. 批判性思考與問題解決能力", score: "極高" },
-        { itemCategory: "核心能力", itemName: "C. 溝通合作與倫理關懷素養", score: "極高" },
-        { itemCategory: "核心能力", itemName: "D. 智慧科技應用與自主終身學習", score: "高" }
+        { itemCategory: "核心能力", itemName: "A. 基礎生醫科學與護理技術能力", score: "極高" }
       ],
       overallResult: "修正後通過",
       qualitativeComments: "1. 本科目表規劃相當完整，符合健康主軸與數位科技 trend。\n2. 建議在『智慧醫療與數位科技護理應用』課程中，可再增加 AI 護理照護實例探討。\n3. 建議海外實習選修課程可與南部醫學中心國際醫療部合作深化。",
       actionProposed: "已採納委員意見，將納入系課程委員會提案討論並優化授課大綱。"
     },
 
-    // 附件9: 蒐集、處理及利用個人資料告知暨同意書 (委員簽具回傳)
     attachment9: {
       reviewerName: "張美珍",
       idNumber: "A123456789",
@@ -135,13 +165,12 @@ window.SampleDataPresets = {
       status: "已回傳上傳"
     },
 
-    // 附件10: 成果報告書 (系所依要求填報與改善追蹤上傳)
     attachment10: {
       execPeriod: "115年09月01日至115年11月05日",
       contactPerson: "林專員",
       contactPhone: "07-7811151#2100",
       planName: "「課程結構外審」實施計畫成果報告",
-      kpiCompleted: "完成 1 份科目表、1 份課程大綱、1 份關聯表及 1 份檢核表外審作業。",
+      kpiCompleted: "完成 1 份科目表外審作業。",
       executiveSummary: "本系於115學年度順利完成課程結構外審作業，聘請2位校外專家委員進行審查。委員給予本系健康主軸與智慧醫療課程高度肯定，並提出2項優化建議，已送系課程委員會討論通過並進行改善追蹤。",
       passCount: 1,
       conditionalPassCount: 1,
@@ -164,9 +193,10 @@ window.SampleDataPresets = {
   },
 
   "2elderly": {
-    name: "115學年度 二年制日間部 高齡照護健康管理系（違規警示與全流程範例）",
-    systemType: "日二技",
+    name: "115學年度 護理學院 高齡照護健康管理系【二年制日間部】(對比報表警示範例)",
+    collegeName: "護理學院",
     deptName: "高齡照護健康管理系",
+    systemType: "日二技",
     academicYear: "115",
     totalGenCreditsRequired: 16,
     totalProfCreditsRequired: 56,
@@ -202,8 +232,8 @@ window.SampleDataPresets = {
         courseName: "高齡照護總結性實務專題",
         enCourseName: "Elderly Care Capstone Project",
         category: "新訂科目",
-        college: "醫護學院",
-        dept: "高齡照護系",
+        college: "護理學院",
+        dept: "高齡照護健康管理系",
         units: [
           "1. 專題題目擬定與問題範疇確立",
           "2. 長照實務文獻探討與方法設計",
@@ -231,8 +261,7 @@ window.SampleDataPresets = {
       deptName: "高齡照護健康管理系",
       reviewerName: "王國華 副教授",
       quantitativeScores: [
-        { itemCategory: "培育目標", itemName: "1. 培育長照機構管理人才", score: "高" },
-        { itemCategory: "核心能力", itemName: "A. 長期照護專業技術", score: "尚可" }
+        { itemCategory: "培育目標", itemName: "1. 培育長照機構管理人才", score: "高" }
       ],
       overallResult: "建議修正",
       qualitativeComments: "1. 專業必修學分(42)占選修學分(14)高達3倍，違反要點以2倍為原則之規定，請調降必修或增加選修。\n2. 『職場專業倫理與法規』開設於1年級，依要點規定應開設於高年級(2年級)。\n3. 專題課程教學單元僅3項，未達6項門檻。",

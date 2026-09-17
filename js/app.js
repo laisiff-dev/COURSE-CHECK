@@ -1,16 +1,10 @@
-/* 輔英科技大學「課程結構外審」自動檢核系統 - UI 主控與權限分工管理 */
+/* 輔英科技大學「課程結構外審」自動檢核系統 - UI 主控與對比報表導出器 */
 
 document.addEventListener("DOMContentLoaded", () => {
   let currentDataset = window.SampleDataPresets["4nursing"];
   let auditor = new CourseAuditor(currentDataset);
-
-  // 當前登入身分權限角色
-  // "academic" = 教務處業務承辦人 (管考權限：考點1初審經費核定 & 考點3最後結案核銷)
-  // "dept"     = 專業系所外審承辦人 (執行權限：附件1~4維護、寄送資料、彙整附件7/8/9、上傳附件10)
-  // "reviewer" = 校外外審專家委員 (執行權限：填寫附件8意見表 & 簽具附件9同意書)
   let currentRole = "academic"; 
 
-  // 三階段考點決策狀態
   let workflowState = {
     gate1: { status: "PASSED", reviewer: "教務處課務註冊組承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經常門經費。" },
     gate2: { status: "PASSED", reviewer: "系上承辦人彙整 (張美珍 專家)", date: "115年10月15日", notes: "系上完成校外專家外審，附件8意見表已回收。" },
@@ -26,10 +20,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabItems = document.querySelectorAll(".tab-item");
   const tabContents = document.querySelectorAll(".tab-content");
   const presetSelect = document.getElementById("preset-select");
+  const collegeSelect = document.getElementById("college-select");
+  const deptSelect = document.getElementById("dept-select");
   const btnLoadPreset = document.getElementById("btn-load-preset");
   const btnRunAudit = document.getElementById("btn-run-audit");
   const btnPrintAtt5 = document.getElementById("btn-print-att5");
   const rolePills = document.querySelectorAll(".role-pill");
+
+  // 初始化輔英學院與系所選單
+  initFooyinCollegeDropdowns();
 
   // 初始化載入
   loadPresetData("4nursing");
@@ -40,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
       rolePills.forEach(p => p.classList.remove("active"));
       pill.classList.add("active");
       currentRole = pill.getAttribute("data-role");
-
       updateRoleNoticeUI();
       renderHumanCheckpointGates();
     });
@@ -61,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // 一鍵載入預設資料組
   if (btnLoadPreset) {
     btnLoadPreset.addEventListener("click", () => {
       const key = presetSelect ? presetSelect.value : "4nursing";
@@ -68,16 +67,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 重新執行全套檢核
   if (btnRunAudit) {
     btnRunAudit.addEventListener("click", () => {
       runAuditAndUpdateUI();
     });
   }
 
+  // 列印按鈕
   if (btnPrintAtt5) {
     btnPrintAtt5.addEventListener("click", () => {
       window.print();
     });
+  }
+
+  // 初始化輔英學院與系所動態下拉選單
+  function initFooyinCollegeDropdowns() {
+    if (!collegeSelect || !deptSelect) return;
+
+    collegeSelect.innerHTML = window.FooyinColleges.map(c => `
+      <option value="${c.collegeName}">${c.collegeName}</option>
+    `).join("");
+
+    updateDeptOptions(window.FooyinColleges[0].collegeName);
+
+    collegeSelect.addEventListener("change", (e) => {
+      updateDeptOptions(e.target.value);
+    });
+
+    deptSelect.addEventListener("change", (e) => {
+      const selectedDeptName = e.target.value;
+      currentDataset.deptName = selectedDeptName;
+      currentDataset.collegeName = collegeSelect.value;
+      currentDataset.attachment1.unitName = selectedDeptName;
+      runAuditAndUpdateUI();
+    });
+  }
+
+  function updateDeptOptions(collegeName) {
+    const col = window.FooyinColleges.find(c => c.collegeName === collegeName);
+    if (!col) return;
+
+    deptSelect.innerHTML = col.depts.map(d => `
+      <option value="${d.name}">${d.name} (${d.sysDegrees.join("/")})</option>
+    `).join("");
   }
 
   // 載入預設資料
@@ -92,17 +125,19 @@ document.addEventListener("DOMContentLoaded", () => {
       workflowState.gate1 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年09月21日", notes: "教務處初審發現必選修比例(3.0倍)爆表，退回系上修正。" };
       workflowState.gate2 = { status: "PENDING", reviewer: "系上承辦人 (王國華 專家)", date: "-", notes: "待第一階段退回修正完成後外審。" };
       workflowState.gate3 = { status: "PENDING", reviewer: "教務處業務承辦人", date: "-", notes: "待修正完成後由教務處最後管考。" };
-      workflowState.logs.unshift({
-        step: "第一關：計畫管考審核",
-        action: "🔴 教務處退回系上修正",
-        user: "教務處業務承辦人",
-        time: "115-09-21 11:00",
-        comment: "發現必選修比過高與倫理年級不符，退回系上重修正。"
-      });
     } else {
       workflowState.gate1 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年09月20日", notes: "教務處初審核定通過，核發經費。" };
       workflowState.gate2 = { status: "PASSED", reviewer: "系上承辦人 (張美珍 專家)", date: "115年10月15日", notes: "系上完成外審收回附件8意見表。" };
       workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月05日", notes: "教務處最後管考核可，完成核銷結案。" };
+    }
+
+    // 同步更新學院系所選單
+    if (collegeSelect && currentDataset.collegeName) {
+      collegeSelect.value = currentDataset.collegeName;
+      updateDeptOptions(currentDataset.collegeName);
+    }
+    if (deptSelect && currentDataset.deptName) {
+      deptSelect.value = currentDataset.deptName;
     }
 
     runAuditAndUpdateUI();
@@ -148,11 +183,106 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAttachment9Hub(currentDataset.attachment9);
     renderAttachment10Report(currentDataset.attachment10);
 
+    // 核心對比報表渲染與 CSV 導出事件綁定
+    renderComparisonReportView(auditRes.comparisonReport);
+
     renderHumanCheckpointGates();
     renderApprovalHistoryLogs();
   }
 
-  // 頂部三階段進度條
+  // 渲染對比報表視圖 (各系自動檢核問題及委員再審查回應對比資料報表)
+  function renderComparisonReportView(reportItems) {
+    const container = document.getElementById("comparison-report-view");
+    if (!container) return;
+
+    const dept = currentDataset.deptName || "護理系";
+    const college = currentDataset.collegeName || "護理學院";
+    const sys = currentDataset.systemType || "日四技";
+    const year = currentDataset.academicYear || "115";
+
+    const rowsHtml = reportItems.map(item => `
+      <tr>
+        <td style="text-align: center;">${item.no}</td>
+        <td><span class="badge badge-secondary">${item.category}</span></td>
+        <td><strong>${item.itemTarget}</strong></td>
+        <td style="color: #991b1b; font-weight: 500;">${item.auditIssue}</td>
+        <td style="color: #92400e;">${item.reviewerComment}</td>
+        <td style="color: #065f46; font-weight: 600;">${item.deptResponse}</td>
+      </tr>
+    `).join("");
+
+    container.innerHTML = `
+      <div class="attachment5-container">
+        <div class="att5-header">
+          <div class="att5-title">輔英科技大學 ${college} ${dept}【${sys}】</div>
+          <div style="font-size: 1.3rem; font-weight: bold; margin-top: 0.3rem;">各系自動檢核問題及委員再審查回應對比資料報表 (${year}學年度)</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;" class="no-print">
+          <div>目前對比項目數：<strong>${reportItems.length}</strong> 項</div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-primary" id="btn-export-comparison-csv">📥 導出 CSV 報表 (Excel相容)</button>
+            <button class="btn btn-outline" onclick="window.print()">🖨️ 導出 / 列印 PDF 報表</button>
+          </div>
+        </div>
+
+        <table class="att5-table">
+          <thead>
+            <tr>
+              <th style="width: 6%;">項次</th>
+              <th style="width: 14%;">對比類別</th>
+              <th style="width: 18%;">標的科目 / 條文</th>
+              <th style="width: 24%;">自動檢核發現問題 (附件5)</th>
+              <th style="width: 18%;">外審委員審查意見 (附件8)</th>
+              <th style="width: 20%;">系所改善因應措施 (附件10)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="att5-footer" style="margin-top: 2rem;">
+          <div>系承辦人：${currentDataset.attachment1.contactPerson || "專員"}</div>
+          <div>系主任簽章：______________</div>
+          <div>教務處管考簽章：______________</div>
+        </div>
+      </div>
+    `;
+
+    // 綁定 CSV 導出按鈕事件
+    const btnExportCSV = document.getElementById("btn-export-comparison-csv");
+    if (btnExportCSV) {
+      btnExportCSV.addEventListener("click", () => {
+        exportComparisonCSV(reportItems, college, dept, year);
+      });
+    }
+  }
+
+  // 導出 CSV 報表 (帶有 BOM 的 UTF-8 確保 Excel 開啟繁體中文無亂碼)
+  function exportComparisonCSV(reportItems, college, dept, year) {
+    let csvContent = "\uFEFF"; // UTF-8 BOM
+    csvContent += `輔英科技大學 ${college} ${dept} (${year}學年度) 各系自動檢核問題及委員再審查回應對比資料報表\n`;
+    csvContent += `項次,對比類別,標的科目/條文,自動檢核發現問題,外審委員審查意見,系所改善因應措施\n`;
+
+    reportItems.forEach(item => {
+      const cleanIssue = `"${(item.auditIssue || '').replace(/"/g, '""')}"`;
+      const cleanComment = `"${(item.reviewerComment || '').replace(/"/g, '""')}"`;
+      const cleanResponse = `"${(item.deptResponse || '').replace(/"/g, '""')}"`;
+      csvContent += `${item.no},"${item.category}","${item.itemTarget}",${cleanIssue},${cleanComment},${cleanResponse}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `輔英科大_${dept}_課程結構外審問題與回應對比報表_${year}學年度.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // 頂部進度條
   function renderWorkflowStepBar() {
     const container = document.getElementById("workflow-steps-container");
     if (!container) return;
@@ -188,9 +318,8 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  // 考點管考權限卡片 (Gate 1, Gate 2, Gate 3)
+  // 考點管考權限卡片
   function renderHumanCheckpointGates() {
-    // 考點 1：教務處業務承辦人
     const g1Box = document.getElementById("gate1-control-box");
     if (g1Box) {
       const isAcademic = currentRole === "academic";
@@ -205,9 +334,6 @@ document.addEventListener("DOMContentLoaded", () => {
               當前狀態：${workflowState.gate1.status === 'PASSED' ? '🟢 教務處初審通過' : '🔴 已退回系上修正'}
             </span>
           </div>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-            由<strong>教務處業務承辦人</strong>審核系上帶入之附件1~4及附件5自動檢核結果，決定是否核定經常門經費並准予系上進行外審：
-          </p>
           ${isAcademic ? `
             <div class="gate-controls">
               <div>
@@ -227,7 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           ` : `
             <div class="read-only-notice">
-              🔒 <strong>管考權限提醒：</strong>您當前身分不是【教務處業務承辦人】。第一關管考權限歸屬於教務處課務註冊組，您僅能瀏覽當前管考紀錄。
+              🔒 <strong>管考權限提醒：</strong>您當前身分不是【教務處業務承辦人】。第一關管考權限歸屬於教務處課務註冊組。
             </div>
           `}
         </div>
@@ -240,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (act === "APPROVE") {
             workflowState.gate1 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年09月22日", notes: notes };
             workflowState.logs.unshift({ step: "第一關：計畫管考", action: "🟢 教務處核定通過", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("【教務處管考成功】第一關初審通過！已核定經常門經費，並准予系上執行外審。");
+            alert("【教務處管考成功】第一關初審通過！已核定經常門經費。");
           } else {
             workflowState.gate1 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年09月22日", notes: notes };
             workflowState.logs.unshift({ step: "第一關：計畫管考", action: "🔴 教務處退回修正", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
@@ -251,7 +377,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // 考點 2：系上外審承辦人 & 專家
     const g2Box = document.getElementById("gate2-control-box");
     if (g2Box) {
       const isDept = currentRole === "dept" || currentRole === "reviewer";
@@ -266,9 +391,6 @@ document.addEventListener("DOMContentLoaded", () => {
               當前狀態：${workflowState.gate2.status === 'PASSED' ? '🟢 外審彙整完成' : '🔴 專家建議修正'}
             </span>
           </div>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-            由<strong>系上外審承辦人</strong>聯繫校外專家寄送資料，專家參照自動檢核結果填寫附件8意見表與附件9個資同意書後，系上彙整結果：
-          </p>
           ${isDept ? `
             <div class="gate-controls">
               <div>
@@ -301,18 +423,17 @@ document.addEventListener("DOMContentLoaded", () => {
           if (act === "APPROVE") {
             workflowState.gate2 = { status: "PASSED", reviewer: "系上承辦人 (張美珍 專家)", date: "115年10月18日", notes: notes };
             workflowState.logs.unshift({ step: "第二關：專家外審", action: "🟢 專家審查通過", user: "系上承辦人 / 專家", time: new Date().toLocaleString(), comment: notes });
-            alert("【系上外審執行成功】已完成外審意見與個資同意書彙整！已准予進入第三階段上傳成果報告。");
+            alert("【系上外審執行成功】已完成外審意見彙整！准予進行第三階段。");
           } else {
             workflowState.gate2 = { status: "REJECTED", reviewer: "系上承辦人 (王國華 專家)", date: "115年10月18日", notes: notes };
             workflowState.logs.unshift({ step: "第二關：專家外審", action: "🔴 專家建議修正", user: "系上承辦人 / 專家", time: new Date().toLocaleString(), comment: notes });
-            alert("【外審意見紀錄成功】專家建議修正，已拋轉至第三階段由系上填寫改善因應措施。");
+            alert("【外審意見紀錄成功】專家建議修正，已拋轉至第三階段對照表。");
           }
           runAuditAndUpdateUI();
         });
       }
     }
 
-    // 考點 3：教務處業務承辦人 (最後一關)
     const g3Box = document.getElementById("gate3-control-box");
     if (g3Box) {
       const isAcademic = currentRole === "academic";
@@ -327,9 +448,6 @@ document.addEventListener("DOMContentLoaded", () => {
               當前狀態：${workflowState.gate3.status === 'PASSED' ? '🟢 教務處管考結案核銷' : '🔴 退回系上重新修正'}
             </span>
           </div>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-            系上送交附件10成果報告書與外審改善對照表後，由<strong>最後一關教務處業務承辦人</strong>進行管考審核與經費核銷：
-          </p>
           ${isAcademic ? `
             <div class="gate-controls">
               <div>
@@ -349,7 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           ` : `
             <div class="read-only-notice">
-              🔒 <strong>管考權限提醒：</strong>最後一關成果報告核銷與結案管考權限歸屬於【教務處業務承辦人】。請切換至教務處承辦人身分進行最後一關管考簽核。
+              🔒 <strong>管考權限提醒：</strong>最後一關成果報告核銷與結案管考權限歸屬於【教務處業務承辦人】。
             </div>
           `}
         </div>
@@ -362,11 +480,11 @@ document.addEventListener("DOMContentLoaded", () => {
           if (act === "APPROVE") {
             workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月08日", notes: notes };
             workflowState.logs.unshift({ step: "最後一關：成果與核銷", action: "🟢 教務處核銷結案", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("🎉【教務處最後一關管考成功】成果報告與改善對照表核章無誤，完成經費核銷與結案！");
+            alert("🎉【教務處最後一關管考成功】完成經常門經費核銷與結案！");
           } else {
             workflowState.gate3 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年11月08日", notes: notes };
             workflowState.logs.unshift({ step: "最後一關：成果與核銷", action: "🔴 教務處退回修正", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("【教務處管考退回成功】已退回系上要求重新修訂附件10改善措施。");
+            alert("【教務處管考退回成功】已退回系上重新修訂改善對照表。");
           }
           runAuditAndUpdateUI();
         });
@@ -374,7 +492,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 審核履歷
   function renderApprovalHistoryLogs() {
     const tbody = document.getElementById("tbody-approval-logs");
     if (!tbody) return;

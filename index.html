@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>輔英科技大學「課程結構外審」全流程自動檢核與管考權限系統</title>
+  <title>輔英科技大學「課程結構外審」全流程自動檢核與各系對比報表系統</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
       <div class="brand-logo">FY</div>
       <div class="brand-title">
         <h1>輔英科技大學「課程結構外審」全流程自動檢核系統</h1>
-        <p>管考權限區分：第一關(教務處初審) ➔ 第二關(系上執行外審) ➔ 最後一關(教務處核銷結案)</p>
+        <p>涵蓋輔英各學院不同系所輸入區，支援自動檢核問題與委員審查回應對比報表 CSV / PDF 輸出</p>
       </div>
     </div>
     <div class="header-actions">
@@ -31,15 +31,11 @@
       <div class="role-pill" data-role="dept">🏫 專業系所外審承辦人 (執行權限：外審聯繫與成果填報)</div>
       <div class="role-pill" data-role="reviewer">🎓 校外外審專家委員 (審查權限：附件8與個資同意)</div>
     </div>
-    <div id="current-role-display">
-      <!-- 由 JS 動態顯示當前身分權限提示 -->
-    </div>
+    <div id="current-role-display"></div>
   </div>
 
   <!-- 3 階段進度條 Bar -->
-  <div id="workflow-steps-container" class="workflow-steps-bar no-print">
-    <!-- 由 JS 動態渲染 Step Pill -->
-  </div>
+  <div id="workflow-steps-container" class="workflow-steps-bar no-print"></div>
 
   <div class="container">
     
@@ -48,6 +44,7 @@
       <div class="tab-item active" data-tab="tab-part1">🔹 第一關：教務處初審管考 (附件1~4 & 附件5)</div>
       <div class="tab-item" data-tab="tab-part2">🔹 第二關：系上外審與專家審查 (附件7,9 & 附件8)</div>
       <div class="tab-item" data-tab="tab-part3">🔹 最後一關：教務處核銷結案 (附件10成果與改善)</div>
+      <div class="tab-item" data-tab="tab-comparison" style="color: var(--secondary-color); font-weight: bold;">📊 問題與回應對比報表 (CSV/PDF)</div>
       <div class="tab-item" data-tab="tab-history">📜 考點審核歷史與對照履歷</div>
       <div class="tab-item" data-tab="tab-courses">📚 科目表線上檢視 (附件2)</div>
     </nav>
@@ -55,18 +52,21 @@
     <!-- 第一關：教務處初審管考 (權限：教務處業務承辦人) -->
     <section id="tab-part1" class="tab-content active">
       
-      <!-- 快速載入示範資料列 -->
+      <!-- 輔英現有學院與不同系所動態選擇輸入區 -->
       <div class="preset-bar">
         <div class="preset-info">
-          <h3>⚡ 示範資料組一鍵快捷載入</h3>
-          <p>選擇預設的系所課程結構資料組，測試【合格通過】與【不合格退回】管考考點：</p>
+          <h3>🏫 輔英科技大學 現有學院與不同系所輸入帶入區</h3>
+          <p>請選擇目標學院與系所，系統將自動載入該系所課程結構與對比資料：</p>
         </div>
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-          <select id="preset-select" class="form-select" style="min-width: 320px;">
-            <option value="4nursing">115學年度 四年制日間部 護理系 (初審合格範例)</option>
-            <option value="2elderly">115學年度 二年制日間部 高齡照護系 (初審退回範例)</option>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <select id="college-select" class="form-select" style="min-width: 180px; font-weight: bold;"></select>
+          <select id="dept-select" class="form-select" style="min-width: 220px; font-weight: bold;"></select>
+          <span style="color: #0284c7; font-weight: bold;">| 示範範例：</span>
+          <select id="preset-select" class="form-select" style="min-width: 260px;">
+            <option value="4nursing">護理學院 護理系 (合格對比範例)</option>
+            <option value="2elderly">護理學院 高齡照護系 (警示對比範例)</option>
           </select>
-          <button class="btn btn-primary" id="btn-load-preset">載入此預設資料組</button>
+          <button class="btn btn-primary" id="btn-load-preset">載入該系所資料</button>
         </div>
       </div>
 
@@ -186,11 +186,8 @@
 
     <!-- 第二關：系上外審與專家審查 (權限：專業系所承辦人 & 校外專家) -->
     <section id="tab-part2" class="tab-content">
-      
-      <!-- 📌 第二關執行考點 (權限：系上外審承辦人 & 專家) -->
       <div id="gate2-control-box" class="no-print"></div>
 
-      <!-- 附件7 & 附件9 Slots -->
       <div class="section-title">
         <span>📁 第二關 檢附文件與委員回傳區 (附件7 & 附件9)</span>
       </div>
@@ -214,10 +211,8 @@
         </div>
       </div>
 
-      <!-- 附件9 個資同意書詳細區 -->
       <div id="att9-hub-view"></div>
 
-      <!-- 附件8 審查意見表預覽與填寫區 -->
       <div class="section-title" style="margin-top: 2rem;">
         <span>📝 附件8：課程結構審查意見表 (專家根據自動檢核結果填寫)</span>
       </div>
@@ -226,11 +221,8 @@
 
     <!-- 最後一關：教務處核銷結案 (權限：教務處業務承辦人) -->
     <section id="tab-part3" class="tab-content">
-      
-      <!-- 📌 最後一關管考考點 (權限：教務處業務承辦人) -->
       <div id="gate3-control-box" class="no-print"></div>
 
-      <!-- 附件10 Slot -->
       <div class="section-title">
         <span>📁 第三階段 專業系所成果與改善對照上傳 (附件10)</span>
       </div>
@@ -245,11 +237,20 @@
         </div>
       </div>
 
-      <!-- 附件10 成果報告與改善對照表 -->
       <div class="section-title" style="margin-top: 2rem;">
         <span>📈 附件10：成果報告書與外審意見改善追蹤對照表 (教務處最後核銷依據)</span>
       </div>
       <div id="att10-report-view"></div>
+    </section>
+
+    <!-- 📊 各系自動檢核問題及委員再審查回應對比資料報表 (可導出 CSV / PDF) -->
+    <section id="tab-comparison" class="tab-content">
+      <div class="section-title no-print">
+        <span>📊 各系自動檢核問題及委員再審查回應對比資料報表 (CSV / PDF 輸出)</span>
+      </div>
+      <div id="comparison-report-view">
+        <!-- 由 JS 動態生成並支援 CSV 與 PDF 導出 -->
+      </div>
     </section>
 
     <!-- 考點審核歷史與對照履歷 -->
