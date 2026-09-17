@@ -359,3 +359,164 @@ body {
   .attachment5-container { position: absolute; left: 0; top: 0; width: 100%; padding: 0; box-shadow: none; border: none; }
   .no-print { display: none !important; }
 }
+
+/* 附件8 專家線上填寫與親簽紙本上傳控制卡片 */
+.att8-hub-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.att8-hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid #dbeafe;
+  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.att8-hub-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.att8-actions-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.paper-upload-box {
+  background: #ffffff;
+  border: 2px dashed #93c5fd;
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+.paper-upload-box:hover {
+  border-color: var(--primary-color);
+  background: #f0f7ff;
+}
+
+.file-status-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+/* 線上編輯表單 Drawer / Box */
+.att8-editor-panel {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-top: 1.25rem;
+  box-shadow: var(--shadow-md);
+}
+
+.att8-editor-section {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.att8-editor-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.score-select-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+.score-select-table th, .score-select-table td {
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 0.75rem;
+}
+.score-select-table th {
+  background-color: #f8fafc;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 紙本預覽 Modal */
+.att8-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.att8-modal-content {
+  background: #ffffff;
+  width: 100%;
+  max-width: 850px;
+  max-height: 90vh;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.att8-modal-header {
+  background: var(--primary-color);
+  color: #ffffff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.att8-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.simulated-paper-doc {
+  background: #fffdfa;
+  border: 2px solid #e2e8f0;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.03);
+  padding: 2.5rem;
+  font-family: "標楷體", "DFKai-SB", "PMingLiU", serif, sans-serif;
+  color: #1e293b;
+  position: relative;
+}
+

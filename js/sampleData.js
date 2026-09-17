@@ -148,15 +148,25 @@ window.SampleDataPresets = {
       reviewType: "外審",
       systemDegree: "四年制日間部",
       deptName: "護理系",
-      reviewerName: "張美珍 教授",
+      reviewerOrgTitle: "國立成功大學醫學院護理學系 教授兼副院長",
       quantitativeScores: [
-        { itemCategory: "培育目標", itemName: "1. 培育具備關懷與專業倫理之臨床護理人才", score: "極高" },
-        { itemCategory: "培育目標", itemName: "2. 強化學生數位科技與智慧醫療之應用能力", score: "極高" },
-        { itemCategory: "核心能力", itemName: "A. 基礎生醫科學與護理技術能力", score: "極高" }
+        { itemCategory: "培育目標對接", itemName: "1. 培育具備關懷與專業倫理之臨床護理人才", score: "極高" },
+        { itemCategory: "核心能力覆蓋", itemName: "2. 強化學生數位科技與智慧醫療之應用能力", score: "極高" },
+        { itemCategory: "必選修比例", itemName: "3. 必選修學分結構與課程配比合理性", score: "極高" },
+        { itemCategory: "課程大綱品質", itemName: "4. 單元教學內容與職場實務需求對接程度", score: "極高" }
       ],
       overallResult: "修正後通過",
-      qualitativeComments: "1. 本科目表規劃相當完整，符合健康主軸與數位科技 trend。\n2. 建議在『智慧醫療與數位科技護理應用』課程中，可再增加 AI 護理照護實例探討。\n3. 建議海外實習選修課程可與南部醫學中心國際醫療部合作深化。",
-      actionProposed: "已採納委員意見，將納入系課程委員會提案討論並優化授課大綱。"
+      qualitativeComments: "1. 本科目表規劃相當完整，符合健康主軸與數位科技趨勢。\n2. 建議在『智慧醫療與數位科技護理應用』課程中，可再增加 AI 護理照護實例探討。\n3. 建議海外實習選修課程可與南部醫學中心國際醫療部合作深化。",
+      actionProposed: "已採納委員意見，將納入系課程委員會提案討論並優化授課大綱。",
+      onlineSigned: true,
+      onlineSignTimestamp: "115年10月15日 14:30:22",
+      paperScanFile: {
+        uploaded: true,
+        fileName: "115學年度_護理系_附件8_校外專家審查意見表_親簽掃描檔.pdf",
+        fileSize: "2.4 MB",
+        uploadTimestamp: "115年10月16日 09:15:00",
+        uploadedBy: "張美珍 教授"
+      }
     },
 
     attachment9: {
@@ -271,13 +281,24 @@ window.SampleDataPresets = {
       reviewType: "外審",
       systemDegree: "二年制日間部",
       deptName: "高齡照護健康管理系",
-      reviewerName: "王國華 副教授",
+      reviewerOrgTitle: "高雄醫學大學高齡長期照護碩士學位學程 副教授",
       quantitativeScores: [
-        { itemCategory: "培育目標", itemName: "1. 培育長照機構管理人才", score: "高" }
+        { itemCategory: "培育目標對接", itemName: "1. 培育長照機構管理人才與高齡照護專才", score: "高" },
+        { itemCategory: "必選修比例", itemName: "2. 必選修學分結構配比合理性 (檢核發現超標)", score: "低" },
+        { itemCategory: "課程大綱品質", itemName: "3. 總結性專題課程教學單元充實度 (未達6項)", score: "低" }
       ],
       overallResult: "建議修正",
       qualitativeComments: "1. 專業必修學分(42)占選修學分(14)高達3倍，違反要點以2倍為原則之規定，請調降必修或增加選修。\n2. 『職場專業倫理與法規』開設於1年級，依要點規定應開設於高年級(2年級)。\n3. 專題課程教學單元僅3項，未達6項門檻。",
-      actionProposed: "已請系課程委員會重新調整必選修學分配置與倫理課程開設年級。"
+      actionProposed: "已請系課程委員會重新調整必選修學分配置與倫理課程開設年級。",
+      onlineSigned: true,
+      onlineSignTimestamp: "115年10月20日 16:10:00",
+      paperScanFile: {
+        uploaded: true,
+        fileName: "115學年度_高照系_附件8_校外專家審查意見表_紙本掃描檔.pdf",
+        fileSize: "1.9 MB",
+        uploadTimestamp: "115年10月21日 11:30:00",
+        uploadedBy: "王國華 副教授"
+      }
     },
 
     attachment9: {
