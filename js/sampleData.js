@@ -1,6 +1,5 @@
 /* 輔英科技大學「課程結構外審」自動檢核系統 - 學院系所對照與預設資料庫 */
 
-// 輔英科技大學現有學院與系所完整架構
 window.FooyinColleges = [
   {
     collegeName: "護理學院",
@@ -47,7 +46,7 @@ window.FooyinColleges = [
 
 window.SampleDataPresets = {
   "4nursing": {
-    name: "115學年度 護理學院 護理系【四年制日間部】(標準符合與對比報表範例)",
+    name: "115學年度 護理學院 護理系【四年制日間部】(標準符合與簽章範例)",
     collegeName: "護理學院",
     deptName: "護理系",
     systemType: "日四技",
@@ -55,6 +54,13 @@ window.SampleDataPresets = {
     totalGenCreditsRequired: 32,
     totalProfCreditsRequired: 96,
     
+    // 附件5 主管線上簽名與時間戳記資料
+    attachment5Signatures: {
+      deptHead: { name: "林主任", title: "系科主任", signed: true, timestamp: "115年09月25日 10:30:15" },
+      dean: { name: "張院長", title: "學院院長", signed: true, timestamp: "115年09月26日 14:15:20" },
+      vpaa: { name: "黃教務長", title: "教務長", signed: true, timestamp: "115年09月27日 16:45:00" }
+    },
+
     attachment1: {
       unitName: "護理系",
       applyDate: "115年09月15日",
@@ -193,7 +199,7 @@ window.SampleDataPresets = {
   },
 
   "2elderly": {
-    name: "115學年度 護理學院 高齡照護健康管理系【二年制日間部】(對比報表警示範例)",
+    name: "115學年度 護理學院 高齡照護健康管理系【二年制日間部】(簽章範例)",
     collegeName: "護理學院",
     deptName: "高齡照護健康管理系",
     systemType: "日二技",
@@ -201,6 +207,12 @@ window.SampleDataPresets = {
     totalGenCreditsRequired: 16,
     totalProfCreditsRequired: 56,
     
+    attachment5Signatures: {
+      deptHead: { name: "黃主任", title: "系科主任", signed: true, timestamp: "115年09月26日 09:15:00" },
+      dean: { name: "張院長", title: "學院院長", signed: false, timestamp: "-", signatureImg: "" },
+      vpaa: { name: "黃教務長", title: "教務長", signed: false, timestamp: "-", signatureImg: "" }
+    },
+
     attachment1: {
       unitName: "高齡照護健康管理系",
       applyDate: "115年09月18日",

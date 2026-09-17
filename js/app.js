@@ -1,4 +1,4 @@
-/* 輔英科技大學「課程結構外審」自動檢核系統 - UI 主控與對比報表導出器 */
+/* 輔英科技大學「課程結構外審」自動檢核系統 - UI 主控與附件5線上主管簽名及時間戳記 */
 
 document.addEventListener("DOMContentLoaded", () => {
   let currentDataset = window.SampleDataPresets["4nursing"];
@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ]
   };
 
-  // DOM 元素引用
   const tabItems = document.querySelectorAll(".tab-item");
   const tabContents = document.querySelectorAll(".tab-content");
   const presetSelect = document.getElementById("preset-select");
@@ -27,13 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnPrintAtt5 = document.getElementById("btn-print-att5");
   const rolePills = document.querySelectorAll(".role-pill");
 
-  // 初始化輔英學院與系所選單
   initFooyinCollegeDropdowns();
-
-  // 初始化載入
   loadPresetData("4nursing");
 
-  // 身分切換事件
   rolePills.forEach(pill => {
     pill.addEventListener("click", () => {
       rolePills.forEach(p => p.classList.remove("active"));
@@ -44,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 分頁切換
   tabItems.forEach(tab => {
     tab.addEventListener("click", () => {
       tabItems.forEach(t => t.classList.remove("active"));
@@ -59,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 一鍵載入預設資料組
   if (btnLoadPreset) {
     btnLoadPreset.addEventListener("click", () => {
       const key = presetSelect ? presetSelect.value : "4nursing";
@@ -67,24 +60,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 重新執行全套檢核
   if (btnRunAudit) {
     btnRunAudit.addEventListener("click", () => {
       runAuditAndUpdateUI();
     });
   }
 
-  // 列印按鈕
   if (btnPrintAtt5) {
     btnPrintAtt5.addEventListener("click", () => {
       window.print();
     });
   }
 
-  // 初始化輔英學院與系所動態下拉選單
   function initFooyinCollegeDropdowns() {
     if (!collegeSelect || !deptSelect) return;
-
     collegeSelect.innerHTML = window.FooyinColleges.map(c => `
       <option value="${c.collegeName}">${c.collegeName}</option>
     `).join("");
@@ -107,13 +96,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateDeptOptions(collegeName) {
     const col = window.FooyinColleges.find(c => c.collegeName === collegeName);
     if (!col) return;
-
     deptSelect.innerHTML = col.depts.map(d => `
       <option value="${d.name}">${d.name} (${d.sysDegrees.join("/")})</option>
     `).join("");
   }
 
-  // 載入預設資料
   function loadPresetData(key) {
     const preset = window.SampleDataPresets[key];
     if (!preset) return;
@@ -131,7 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
       workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月05日", notes: "教務處最後管考核可，完成核銷結案。" };
     }
 
-    // 同步更新學院系所選單
     if (collegeSelect && currentDataset.collegeName) {
       collegeSelect.value = currentDataset.collegeName;
       updateDeptOptions(currentDataset.collegeName);
@@ -156,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 執行檢核與 UI 更新
   function runAuditAndUpdateUI() {
     const auditRes = auditor.runFullAudit();
 
@@ -178,400 +163,163 @@ document.addEventListener("DOMContentLoaded", () => {
     renderOutlineAuditTable(auditRes.outlineResults);
 
     renderCourseScheduleTable(currentDataset.attachment2);
+
+    // 核心亮點：渲染附件5線上主管簽名控制卡片與附件5標準報表
+    renderAttachment5SigningControlHub();
     renderAttachment5Report(auditRes.ruleResults);
+
     renderAttachment8Report(currentDataset.attachment8);
     renderAttachment9Hub(currentDataset.attachment9);
     renderAttachment10Report(currentDataset.attachment10);
 
-    // 核心對比報表渲染與 CSV 導出事件綁定
     renderComparisonReportView(auditRes.comparisonReport);
-
     renderHumanCheckpointGates();
     renderApprovalHistoryLogs();
   }
 
-  // 渲染對比報表視圖 (各系自動檢核問題及委員再審查回應對比資料報表)
-  function renderComparisonReportView(reportItems) {
-    const container = document.getElementById("comparison-report-view");
+  // 渲染附件5 主管線上簽名與押時間控制卡片
+  function renderAttachment5SigningControlHub() {
+    const container = document.getElementById("att5-signing-hub-container");
     if (!container) return;
 
-    const dept = currentDataset.deptName || "護理系";
-    const college = currentDataset.collegeName || "護理學院";
-    const sys = currentDataset.systemType || "日四技";
-    const year = currentDataset.academicYear || "115";
-
-    const rowsHtml = reportItems.map(item => `
-      <tr>
-        <td style="text-align: center;">${item.no}</td>
-        <td><span class="badge badge-secondary">${item.category}</span></td>
-        <td><strong>${item.itemTarget}</strong></td>
-        <td style="color: #991b1b; font-weight: 500;">${item.auditIssue}</td>
-        <td style="color: #92400e;">${item.reviewerComment}</td>
-        <td style="color: #065f46; font-weight: 600;">${item.deptResponse}</td>
-      </tr>
-    `).join("");
+    const sigs = currentDataset.attachment5Signatures || {
+      deptHead: { name: "系主任", title: "系科主任", signed: false, timestamp: "-" },
+      dean: { name: "院長", title: "學院院長", signed: false, timestamp: "-" },
+      vpaa: { name: "教務長", title: "教務長", signed: false, timestamp: "-" }
+    };
 
     container.innerHTML = `
-      <div class="attachment5-container">
-        <div class="att5-header">
-          <div class="att5-title">輔英科技大學 ${college} ${dept}【${sys}】</div>
-          <div style="font-size: 1.3rem; font-weight: bold; margin-top: 0.3rem;">各系自動檢核問題及委員再審查回應對比資料報表 (${year}學年度)</div>
+      <div class="signing-hub-card no-print">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="color: var(--primary-color); font-size: 1.1rem;">✍️ 附件5 主管線上電子簽章與押時間帶入控制區</h3>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">主管點擊簽名後，簽章與實時時間戳記將自動帶入下方附件5報表頁尾</span>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;" class="no-print">
-          <div>目前對比項目數：<strong>${reportItems.length}</strong> 項</div>
-          <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-primary" id="btn-export-comparison-csv">📥 導出 CSV 報表 (Excel相容)</button>
-            <button class="btn btn-outline" onclick="window.print()">🖨️ 導出 / 列印 PDF 報表</button>
+        <div class="signing-supervisors-grid">
+          <!-- 1. 系主任/組長簽核 -->
+          <div class="supervisor-sign-box">
+            <div>
+              <div style="font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">1. 系科主任 / 通識組長</div>
+              <div style="font-size: 0.85rem; color: #475569;">簽署主管：<strong>${sigs.deptHead.name || "系主任"}</strong></div>
+              <div style="font-size: 0.8rem; margin-top: 0.3rem;">
+                簽署狀態：${sigs.deptHead.signed ? `<span class="badge badge-success">☑ 已線上簽章</span>` : `<span class="badge badge-secondary">□ 未簽章</span>`}
+              </div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+                押時間：${sigs.deptHead.timestamp || "-"}
+              </div>
+            </div>
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem;">
+              <button class="btn btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" id="btn-sign-dept-head">✍️ 線上簽名並押時間</button>
+              ${sigs.deptHead.signed ? `<button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.5rem;" id="btn-clear-dept-head">清除</button>` : ''}
+            </div>
           </div>
-        </div>
 
-        <table class="att5-table">
-          <thead>
-            <tr>
-              <th style="width: 6%;">項次</th>
-              <th style="width: 14%;">對比類別</th>
-              <th style="width: 18%;">標的科目 / 條文</th>
-              <th style="width: 24%;">自動檢核發現問題 (附件5)</th>
-              <th style="width: 18%;">外審委員審查意見 (附件8)</th>
-              <th style="width: 20%;">系所改善因應措施 (附件10)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
+          <!-- 2. 院長簽核 -->
+          <div class="supervisor-sign-box">
+            <div>
+              <div style="font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">2. 學院院長 / 通識主任</div>
+              <div style="font-size: 0.85rem; color: #475569;">簽署主管：<strong>${sigs.dean.name || "院長"}</strong></div>
+              <div style="font-size: 0.8rem; margin-top: 0.3rem;">
+                簽署狀態：${sigs.dean.signed ? `<span class="badge badge-success">☑ 已線上簽章</span>` : `<span class="badge badge-secondary">□ 未簽章</span>`}
+              </div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+                押時間：${sigs.dean.timestamp || "-"}
+              </div>
+            </div>
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem;">
+              <button class="btn btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" id="btn-sign-dean">✍️ 線上簽名並押時間</button>
+              ${sigs.dean.signed ? `<button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.5rem;" id="btn-clear-dean">清除</button>` : ''}
+            </div>
+          </div>
 
-        <div class="att5-footer" style="margin-top: 2rem;">
-          <div>系承辦人：${currentDataset.attachment1.contactPerson || "專員"}</div>
-          <div>系主任簽章：______________</div>
-          <div>教務處管考簽章：______________</div>
+          <!-- 3. 教務長簽核 -->
+          <div class="supervisor-sign-box">
+            <div>
+              <div style="font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">3. 教務長 (校課程會召集人)</div>
+              <div style="font-size: 0.85rem; color: #475569;">簽署主管：<strong>${sigs.vpaa.name || "教務長"}</strong></div>
+              <div style="font-size: 0.8rem; margin-top: 0.3rem;">
+                簽署狀態：${sigs.vpaa.signed ? `<span class="badge badge-success">☑ 已線上簽章</span>` : `<span class="badge badge-secondary">□ 未簽章</span>`}
+              </div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+                押時間：${sigs.vpaa.timestamp || "-"}
+              </div>
+            </div>
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem;">
+              <button class="btn btn-success" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" id="btn-sign-vpaa">✍️ 線上簽名並押時間</button>
+              ${sigs.vpaa.signed ? `<button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.5rem;" id="btn-clear-vpaa">清除</button>` : ''}
+            </div>
+          </div>
         </div>
       </div>
     `;
 
-    // 綁定 CSV 導出按鈕事件
-    const btnExportCSV = document.getElementById("btn-export-comparison-csv");
-    if (btnExportCSV) {
-      btnExportCSV.addEventListener("click", () => {
-        exportComparisonCSV(reportItems, college, dept, year);
+    // 綁定簽名事件處理
+    const getFormattedNow = () => {
+      const d = new Date();
+      const rocYear = d.getFullYear() - 1911;
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${rocYear}年${mm}月${dd}日 ${hh}:${min}:${ss}`;
+    };
+
+    document.getElementById("btn-sign-dept-head").addEventListener("click", () => {
+      currentDataset.attachment5Signatures.deptHead.signed = true;
+      currentDataset.attachment5Signatures.deptHead.timestamp = getFormattedNow();
+      runAuditAndUpdateUI();
+    });
+
+    document.getElementById("btn-sign-dean").addEventListener("click", () => {
+      currentDataset.attachment5Signatures.dean.signed = true;
+      currentDataset.attachment5Signatures.dean.timestamp = getFormattedNow();
+      runAuditAndUpdateUI();
+    });
+
+    document.getElementById("btn-sign-vpaa").addEventListener("click", () => {
+      currentDataset.attachment5Signatures.vpaa.signed = true;
+      currentDataset.attachment5Signatures.vpaa.timestamp = getFormattedNow();
+      runAuditAndUpdateUI();
+    });
+
+    const btnClearDept = document.getElementById("btn-clear-dept-head");
+    if (btnClearDept) {
+      btnClearDept.addEventListener("click", () => {
+        currentDataset.attachment5Signatures.deptHead.signed = false;
+        currentDataset.attachment5Signatures.deptHead.timestamp = "-";
+        runAuditAndUpdateUI();
+      });
+    }
+
+    const btnClearDean = document.getElementById("btn-clear-dean");
+    if (btnClearDean) {
+      btnClearDean.addEventListener("click", () => {
+        currentDataset.attachment5Signatures.dean.signed = false;
+        currentDataset.attachment5Signatures.dean.timestamp = "-";
+        runAuditAndUpdateUI();
+      });
+    }
+
+    const btnClearVpaa = document.getElementById("btn-clear-vpaa");
+    if (btnClearVpaa) {
+      btnClearVpaa.addEventListener("click", () => {
+        currentDataset.attachment5Signatures.vpaa.signed = false;
+        currentDataset.attachment5Signatures.vpaa.timestamp = "-";
+        runAuditAndUpdateUI();
       });
     }
   }
 
-  // 導出 CSV 報表 (帶有 BOM 的 UTF-8 確保 Excel 開啟繁體中文無亂碼)
-  function exportComparisonCSV(reportItems, college, dept, year) {
-    let csvContent = "\uFEFF"; // UTF-8 BOM
-    csvContent += `輔英科技大學 ${college} ${dept} (${year}學年度) 各系自動檢核問題及委員再審查回應對比資料報表\n`;
-    csvContent += `項次,對比類別,標的科目/條文,自動檢核發現問題,外審委員審查意見,系所改善因應措施\n`;
-
-    reportItems.forEach(item => {
-      const cleanIssue = `"${(item.auditIssue || '').replace(/"/g, '""')}"`;
-      const cleanComment = `"${(item.reviewerComment || '').replace(/"/g, '""')}"`;
-      const cleanResponse = `"${(item.deptResponse || '').replace(/"/g, '""')}"`;
-      csvContent += `${item.no},"${item.category}","${item.itemTarget}",${cleanIssue},${cleanComment},${cleanResponse}\n`;
-    });
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `輔英科大_${dept}_課程結構外審問題與回應對比報表_${year}學年度.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  // 頂部進度條
-  function renderWorkflowStepBar() {
-    const container = document.getElementById("workflow-steps-container");
-    if (!container) return;
-
-    const g1 = workflowState.gate1.status;
-    const g2 = workflowState.gate2.status;
-    const g3 = workflowState.gate3.status;
-
-    container.innerHTML = `
-      <div class="step-pill ${g1 === 'PASSED' ? 'passed' : (g1 === 'REJECTED' ? 'rejected' : 'active')}">
-        <div class="step-num">1</div>
-        <div class="step-info-text">
-          <div class="step-info-title">第一關：教務處計畫管考與初審</div>
-          <div class="step-info-sub">【管考權限：教務處業務承辦人】(${g1 === 'PASSED' ? '🟢 核定通過' : (g1 === 'REJECTED' ? '🔴 已退回' : '🟡 審核中')})</div>
-        </div>
-      </div>
-      <div style="font-size: 1.2rem; color: var(--text-muted);">➔</div>
-      <div class="step-pill ${g2 === 'PASSED' ? 'passed' : (g2 === 'REJECTED' ? 'rejected' : (g1 === 'PASSED' ? 'active' : ''))}">
-        <div class="step-num">2</div>
-        <div class="step-info-text">
-          <div class="step-info-title">第二關：系上執行外審與專家審查</div>
-          <div class="step-info-sub">【執行權限：系上外審承辦人 & 專家】(${g2 === 'PASSED' ? '🟢 外審完成' : (g2 === 'REJECTED' ? '🔴 建議修正' : '⚪ 待外審')})</div>
-        </div>
-      </div>
-      <div style="font-size: 1.2rem; color: var(--text-muted);">➔</div>
-      <div class="step-pill ${g3 === 'PASSED' ? 'passed' : (g3 === 'REJECTED' ? 'rejected' : (g2 === 'PASSED' ? 'active' : ''))}">
-        <div class="step-num">3</div>
-        <div class="step-info-text">
-          <div class="step-info-title">最後一關：教務處成果核銷與結案</div>
-          <div class="step-info-sub">【管考權限：教務處業務承辦人】(${g3 === 'PASSED' ? '🟢 結案核銷' : '⚪ 待核銷'})</div>
-        </div>
-      </div>
-    `;
-  }
-
-  // 考點管考權限卡片
-  function renderHumanCheckpointGates() {
-    const g1Box = document.getElementById("gate1-control-box");
-    if (g1Box) {
-      const isAcademic = currentRole === "academic";
-      g1Box.innerHTML = `
-        <div class="checkpoint-gate-card" style="border-color: #0284c7;">
-          <div class="gate-header">
-            <div class="gate-title">
-              📌 第一關管考考點：教務處初審與經費核定
-              <span class="role-authority-badge">管考權限：教務處業務承辦人</span>
-            </div>
-            <span class="badge ${workflowState.gate1.status === 'PASSED' ? 'badge-success' : 'badge-danger'}">
-              當前狀態：${workflowState.gate1.status === 'PASSED' ? '🟢 教務處初審通過' : '🔴 已退回系上修正'}
-            </span>
-          </div>
-          ${isAcademic ? `
-            <div class="gate-controls">
-              <div>
-                <label style="font-size: 0.8rem; font-weight: bold;">教務處管考決策：</label>
-                <select id="gate1-action-select" class="form-select" style="width: 100%;">
-                  <option value="APPROVE">🟢 教務處初審通過 (核定經費並准予外審)</option>
-                  <option value="REJECT">🔴 教務處退回 (退回系上重新修正)</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size: 0.8rem; font-weight: bold;">教務處管考審核意見：</label>
-                <input type="text" id="gate1-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate1.notes}">
-              </div>
-              <div style="display: flex; align-items: flex-end;">
-                <button class="btn btn-primary" id="btn-submit-gate1">送出教務處管考決策</button>
-              </div>
-            </div>
-          ` : `
-            <div class="read-only-notice">
-              🔒 <strong>管考權限提醒：</strong>您當前身分不是【教務處業務承辦人】。第一關管考權限歸屬於教務處課務註冊組。
-            </div>
-          `}
-        </div>
-      `;
-
-      if (isAcademic) {
-        document.getElementById("btn-submit-gate1").addEventListener("click", () => {
-          const act = document.getElementById("gate1-action-select").value;
-          const notes = document.getElementById("gate1-notes-input").value;
-          if (act === "APPROVE") {
-            workflowState.gate1 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年09月22日", notes: notes };
-            workflowState.logs.unshift({ step: "第一關：計畫管考", action: "🟢 教務處核定通過", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("【教務處管考成功】第一關初審通過！已核定經常門經費。");
-          } else {
-            workflowState.gate1 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年09月22日", notes: notes };
-            workflowState.logs.unshift({ step: "第一關：計畫管考", action: "🔴 教務處退回修正", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("【教務處管考成功】已退回系上修正！");
-          }
-          runAuditAndUpdateUI();
-        });
-      }
-    }
-
-    const g2Box = document.getElementById("gate2-control-box");
-    if (g2Box) {
-      const isDept = currentRole === "dept" || currentRole === "reviewer";
-      g2Box.innerHTML = `
-        <div class="checkpoint-gate-card" style="border-color: #00a896;">
-          <div class="gate-header">
-            <div class="gate-title">
-              📌 第二關執行考點：系上外審執行與專家審查意見
-              <span class="role-authority-badge" style="background: #00a896;">執行權限：系上外審承辦人 & 專家</span>
-            </div>
-            <span class="badge ${workflowState.gate2.status === 'PASSED' ? 'badge-success' : 'badge-danger'}">
-              當前狀態：${workflowState.gate2.status === 'PASSED' ? '🟢 外審彙整完成' : '🔴 專家建議修正'}
-            </span>
-          </div>
-          ${isDept ? `
-            <div class="gate-controls">
-              <div>
-                <label style="font-size: 0.8rem; font-weight: bold;">外審審查與系上彙整決策：</label>
-                <select id="gate2-action-select" class="form-select" style="width: 100%;">
-                  <option value="APPROVE">🟢 外審審查通過 (彙整附件7/8/9完成)</option>
-                  <option value="REJECT">🔴 外審建議修正 (專家建議修訂或系上退回調整)</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size: 0.8rem; font-weight: bold;">外審專家意見 / 系上彙整說明：</label>
-                <input type="text" id="gate2-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate2.notes}">
-              </div>
-              <div style="display: flex; align-items: flex-end;">
-                <button class="btn btn-primary" id="btn-submit-gate2">送出外審彙整結果</button>
-              </div>
-            </div>
-          ` : `
-            <div class="read-only-notice">
-              🔒 <strong>權限提醒：</strong>第二關為專業系所外審承辦人與校外專家委員之執行權限。
-            </div>
-          `}
-        </div>
-      `;
-
-      if (isDept) {
-        document.getElementById("btn-submit-gate2").addEventListener("click", () => {
-          const act = document.getElementById("gate2-action-select").value;
-          const notes = document.getElementById("gate2-notes-input").value;
-          if (act === "APPROVE") {
-            workflowState.gate2 = { status: "PASSED", reviewer: "系上承辦人 (張美珍 專家)", date: "115年10月18日", notes: notes };
-            workflowState.logs.unshift({ step: "第二關：專家外審", action: "🟢 專家審查通過", user: "系上承辦人 / 專家", time: new Date().toLocaleString(), comment: notes });
-            alert("【系上外審執行成功】已完成外審意見彙整！准予進行第三階段。");
-          } else {
-            workflowState.gate2 = { status: "REJECTED", reviewer: "系上承辦人 (王國華 專家)", date: "115年10月18日", notes: notes };
-            workflowState.logs.unshift({ step: "第二關：專家外審", action: "🔴 專家建議修正", user: "系上承辦人 / 專家", time: new Date().toLocaleString(), comment: notes });
-            alert("【外審意見紀錄成功】專家建議修正，已拋轉至第三階段對照表。");
-          }
-          runAuditAndUpdateUI();
-        });
-      }
-    }
-
-    const g3Box = document.getElementById("gate3-control-box");
-    if (g3Box) {
-      const isAcademic = currentRole === "academic";
-      g3Box.innerHTML = `
-        <div class="checkpoint-gate-card" style="border-color: #e63946;">
-          <div class="gate-header">
-            <div class="gate-title">
-              📌 最後一關管考考點：教務處成果報告審核與經費核銷結案
-              <span class="role-authority-badge" style="background: #e63946;">最後一關管考權限：教務處業務承辦人</span>
-            </div>
-            <span class="badge ${workflowState.gate3.status === 'PASSED' ? 'badge-success' : 'badge-danger'}">
-              當前狀態：${workflowState.gate3.status === 'PASSED' ? '🟢 教務處管考結案核銷' : '🔴 退回系上重新修正'}
-            </span>
-          </div>
-          ${isAcademic ? `
-            <div class="gate-controls">
-              <div>
-                <label style="font-size: 0.8rem; font-weight: bold;">教務處最後一關管考決策：</label>
-                <select id="gate3-action-select" class="form-select" style="width: 100%;">
-                  <option value="APPROVE">🟢 教務處管考通過 (完成簽核與經常門核銷結案)</option>
-                  <option value="REJECT">🔴 教務處退回 (退回系上重新修正改善對照表)</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size: 0.8rem; font-weight: bold;">教務處管考簽核意見：</label>
-                <input type="text" id="gate3-notes-input" class="form-input" style="width: 100%;" value="${workflowState.gate3.notes}">
-              </div>
-              <div style="display: flex; align-items: flex-end;">
-                <button class="btn btn-success" id="btn-submit-gate3">完成教務處最後一關管考結案</button>
-              </div>
-            </div>
-          ` : `
-            <div class="read-only-notice">
-              🔒 <strong>管考權限提醒：</strong>最後一關成果報告核銷與結案管考權限歸屬於【教務處業務承辦人】。
-            </div>
-          `}
-        </div>
-      `;
-
-      if (isAcademic) {
-        document.getElementById("btn-submit-gate3").addEventListener("click", () => {
-          const act = document.getElementById("gate3-action-select").value;
-          const notes = document.getElementById("gate3-notes-input").value;
-          if (act === "APPROVE") {
-            workflowState.gate3 = { status: "PASSED", reviewer: "教務處業務承辦人", date: "115年11月08日", notes: notes };
-            workflowState.logs.unshift({ step: "最後一關：成果與核銷", action: "🟢 教務處核銷結案", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("🎉【教務處最後一關管考成功】完成經常門經費核銷與結案！");
-          } else {
-            workflowState.gate3 = { status: "REJECTED", reviewer: "教務處業務承辦人", date: "115年11月08日", notes: notes };
-            workflowState.logs.unshift({ step: "最後一關：成果與核銷", action: "🔴 教務處退回修正", user: "教務處業務承辦人", time: new Date().toLocaleString(), comment: notes });
-            alert("【教務處管考退回成功】已退回系上重新修訂改善對照表。");
-          }
-          runAuditAndUpdateUI();
-        });
-      }
-    }
-  }
-
-  function renderApprovalHistoryLogs() {
-    const tbody = document.getElementById("tbody-approval-logs");
-    if (!tbody) return;
-    tbody.innerHTML = workflowState.logs.map((log, idx) => `
-      <tr>
-        <td>#${workflowState.logs.length - idx}</td>
-        <td><strong>${log.step}</strong></td>
-        <td><span class="badge ${log.action.includes('🟢') ? 'badge-success' : 'badge-danger'}">${log.action}</span></td>
-        <td>${log.user}</td>
-        <td style="font-size: 0.85rem; color: #64748b;">${log.time}</td>
-        <td>${log.comment}</td>
-      </tr>
-    `).join("");
-  }
-
-  function renderRuleAuditTable(rules) {
-    const tbody = document.getElementById("tbody-rule-audit");
-    if (!tbody) return;
-    tbody.innerHTML = rules.map(r => `
-      <tr>
-        <td><strong>${r.ruleId}</strong></td>
-        <td>${r.title}</td>
-        <td>${r.category}</td>
-        <td>${r.courseHits}</td>
-        <td><span class="badge ${r.status === 'PASS' ? 'badge-success' : 'badge-danger'}">${r.status === 'PASS' ? '🟢 符合' : '🔴 不符合'}</span></td>
-        <td style="font-size: 0.85rem; color: #475569;">${r.remark}</td>
-      </tr>
-    `).join("");
-  }
-
-  function renderCrossAuditTable(crossItems) {
-    const tbody = document.getElementById("tbody-cross-audit");
-    if (!tbody) return;
-    tbody.innerHTML = crossItems.map(c => `
-      <tr>
-        <td><strong>${c.checkGroup}</strong></td>
-        <td>${c.title}</td>
-        <td><span class="badge ${c.status === 'PASS' ? 'badge-success' : 'badge-danger'}">${c.status === 'PASS' ? '🟢 一致' : '🔴 不一致/異常'}</span></td>
-        <td style="font-size: 0.85rem;">${c.details}</td>
-      </tr>
-    `).join("");
-  }
-
-  function renderOutlineAuditTable(outlines) {
-    const tbody = document.getElementById("tbody-outline-audit");
-    if (!tbody) return;
-    tbody.innerHTML = outlines.map(o => `
-      <tr>
-        <td><strong>${o.courseName}</strong></td>
-        <td style="font-family: monospace; font-size: 0.85rem;">${o.enName}</td>
-        <td>${o.unitCount} 項 (門檻 $\\ge$ ${o.minRequired}項)</td>
-        <td><span class="badge ${o.status === 'PASS' ? 'badge-success' : 'badge-danger'}">${o.status === 'PASS' ? '🟢 檢查通過' : '🔴 需修正'}</span></td>
-        <td style="font-size: 0.85rem;">${o.remark}</td>
-      </tr>
-    `).join("");
-  }
-
-  function renderCourseScheduleTable(courses) {
-    const tbody = document.getElementById("tbody-courses");
-    if (!tbody) return;
-    tbody.innerHTML = courses.map(c => `
-      <tr>
-        <td>${c.id}</td>
-        <td><span class="badge badge-secondary">${c.type}</span></td>
-        <td><strong>${c.name}</strong></td>
-        <td style="font-family: monospace; font-size: 0.825rem; color: #64748b;">${c.enName}</td>
-        <td>${c.credits}</td>
-        <td>${c.hours} / ${c.labHours}</td>
-        <td>第 ${c.year} 學年 第 ${c.semester} 學期</td>
-        <td>${(c.attr || []).map(a => `<span class="badge badge-warning" style="margin-right: 2px;">${a}</span>`).join("")}</td>
-      </tr>
-    `).join("");
-  }
-
+  // 100% 還原附件5 並帶入主管線上簽名與時間戳記
   function renderAttachment5Report(ruleResults) {
     const container = document.getElementById("att5-report-view");
     if (!container) return;
-    const dept = currentDataset.deptName || "○○";
+
+    const dept = currentDataset.deptName || "○○系";
     const sys = currentDataset.systemType || "日四技";
     const year = currentDataset.academicYear || "115";
+    const sigs = currentDataset.attachment5Signatures || {};
 
     const resultMap = {};
     ruleResults.forEach(r => { resultMap[r.ruleId] = r; });
@@ -586,11 +334,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
+    // 格式化頁尾主管簽名與時間戳記
+    const formatSigBlock = (sigObj, defaultRoleTitle) => {
+      if (!sigObj || !sigObj.signed) {
+        return `${defaultRoleTitle}簽章：_______________`;
+      }
+      return `
+        <div>
+          ${defaultRoleTitle}簽章：<strong>${sigObj.name}</strong> 
+          <span class="digital-seal-stamp">印 ${sigObj.name} 電子印章</span>
+          <span class="timestamp-tag">⏱ 簽署時間：${sigObj.timestamp}</span>
+        </div>
+      `;
+    };
+
     container.innerHTML = `
       <div class="attachment5-container">
         <div class="att5-header">
           <div class="att5-title">${dept}【${sys}】科目表（${year}入學年度）檢核表</div>
         </div>
+
         <table class="att5-table">
           <thead>
             <tr>
@@ -600,6 +363,14 @@ document.addEventListener("DOMContentLoaded", () => {
               <th style="width: 8%;">學分數</th>
               <th style="width: 18%;">檢核結果</th>
               <th style="width: 14%;">備註說明</th>
+            </tr>
+            <tr>
+              <th>條/款/目</th>
+              <th>要點內容</th>
+              <th>課程序號 / 科目名稱</th>
+              <th></th>
+              <th></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -698,13 +469,105 @@ document.addEventListener("DOMContentLoaded", () => {
             </tr>
           </tbody>
         </table>
+
+        <!-- 附件5 動態簽名與時間戳記頁尾 -->
         <div class="att5-footer">
-          <div>系科(學位學程)主任/組長簽章：______________</div>
-          <div>學院院長/主任簽章：______________</div>
-          <div>教務長簽章：______________</div>
+          <div>${formatSigBlock(sigs.deptHead, "系科主任/組長")}</div>
+          <div>${formatSigBlock(sigs.dean, "學院院長/主任")}</div>
+          <div>${formatSigBlock(sigs.vpaa, "教務長")}</div>
         </div>
       </div>
     `;
+  }
+
+  // 渲染對比報表與其他視圖
+  function renderComparisonReportView(reportItems) {
+    const container = document.getElementById("comparison-report-view");
+    if (!container) return;
+
+    const dept = currentDataset.deptName || "護理系";
+    const college = currentDataset.collegeName || "護理學院";
+    const sys = currentDataset.systemType || "日四技";
+    const year = currentDataset.academicYear || "115";
+
+    const rowsHtml = reportItems.map(item => `
+      <tr>
+        <td style="text-align: center;">${item.no}</td>
+        <td><span class="badge badge-secondary">${item.category}</span></td>
+        <td><strong>${item.itemTarget}</strong></td>
+        <td style="color: #991b1b; font-weight: 500;">${item.auditIssue}</td>
+        <td style="color: #92400e;">${item.reviewerComment}</td>
+        <td style="color: #065f46; font-weight: 600;">${item.deptResponse}</td>
+      </tr>
+    `).join("");
+
+    container.innerHTML = `
+      <div class="attachment5-container">
+        <div class="att5-header">
+          <div class="att5-title">輔英科技大學 ${college} ${dept}【${sys}】</div>
+          <div style="font-size: 1.3rem; font-weight: bold; margin-top: 0.3rem;">各系自動檢核問題及委員再審查回應對比資料報表 (${year}學年度)</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;" class="no-print">
+          <div>目前對比項目數：<strong>${reportItems.length}</strong> 項</div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-primary" id="btn-export-comparison-csv">📥 導出 CSV 報表 (Excel相容)</button>
+            <button class="btn btn-outline" onclick="window.print()">🖨️ 導出 / 列印 PDF 報表</button>
+          </div>
+        </div>
+
+        <table class="att5-table">
+          <thead>
+            <tr>
+              <th style="width: 6%;">項次</th>
+              <th style="width: 14%;">對比類別</th>
+              <th style="width: 18%;">標的科目 / 條文</th>
+              <th style="width: 24%;">自動檢核發現問題 (附件5)</th>
+              <th style="width: 18%;">外審委員審查意見 (附件8)</th>
+              <th style="width: 20%;">系所改善因應措施 (附件10)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="att5-footer" style="margin-top: 2rem;">
+          <div>系承辦人：${currentDataset.attachment1.contactPerson || "專員"}</div>
+          <div>系主任簽章：______________</div>
+          <div>教務處管考簽章：______________</div>
+        </div>
+      </div>
+    `;
+
+    const btnExportCSV = document.getElementById("btn-export-comparison-csv");
+    if (btnExportCSV) {
+      btnExportCSV.addEventListener("click", () => {
+        exportComparisonCSV(reportItems, college, dept, year);
+      });
+    }
+  }
+
+  function exportComparisonCSV(reportItems, college, dept, year) {
+    let csvContent = "\uFEFF";
+    csvContent += `輔英科技大學 ${college} ${dept} (${year}學年度) 各系自動檢核問題及委員再審查回應對比資料報表\n`;
+    csvContent += `項次,對比類別,標的科目/條文,自動檢核發現問題,外審委員審查意見,系所改善因應措施\n`;
+
+    reportItems.forEach(item => {
+      const cleanIssue = `"${(item.auditIssue || '').replace(/"/g, '""')}"`;
+      const cleanComment = `"${(item.reviewerComment || '').replace(/"/g, '""')}"`;
+      const cleanResponse = `"${(item.deptResponse || '').replace(/"/g, '""')}"`;
+      csvContent += `${item.no},"${item.category}","${item.itemTarget}",${cleanIssue},${cleanComment},${cleanResponse}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `輔英科大_${dept}_課程結構外審問題與回應對比報表_${year}學年度.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function renderAttachment8Report(att8) {
